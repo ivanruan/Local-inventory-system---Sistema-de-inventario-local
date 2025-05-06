@@ -28,5 +28,13 @@ El sistema incluye:
 - Buenas prácticas de diseño y pruebas automatizadas
 - Contenerización con Docker
 
-Para mas informacion, por favor ir a la carpeta "docs"
-.
+Para mas informacion, por favor ir a la carpeta "docs".
+
+Asegurarse de contener 
+
+Nombre del proyecto
+Breve Descripcion 
+Enlace a cada archivo
+Tecnologias principales
+Estado actual del proyecto
+
