@@ -1,61 +1,87 @@
-# 🧩 Módulos del Sistema de Inventario
 
-Este sistema está dividido en varios módulos funcionales para facilitar su desarrollo, mantenimiento y escalabilidad.
+# Módulos del Sistema de Inventario
 
----
-
-## 📦 1. Módulo de Productos
-- Registro de nuevos productos con campos como nombre, descripción, unidad de medida y categoría.
-- Edición y eliminación de productos existentes.
-- Búsqueda y filtrado de productos.
-- Asociación con ubicaciones o categorías específicas.
+Este documento describe la estructura de módulos del sistema de inventario, incluyendo funcionalidades clave y planes futuros.
 
 ---
 
-## 🧾 2. Módulo de Inventario
-- Consulta de existencias actuales por producto.
-- Visualización del stock total y disponible.
-- Información desglosada por ubicación física o lógica.
-- Alertas por niveles bajos de inventario (pendiente para versión futura).
+## 🛠 Módulos Principales
+
+### 1. **Módulo de Productos**
+- **Propósito**: Gestionar la información base de los productos.
+- **Funcionalidades**:
+  - Crear/editar/eliminar productos.
+  - Asociar productos a categorías (HDT, EDT, CON, EPP) y ubicaciones.
+  - Definir especificaciones técnicas, marca, y códigos únicos.
+  - Configurar stock mínimo, máximo y de seguridad.
+
+### 2. **Módulo de Inventario**
+- **Propósito**: Monitorear y controlar el stock en tiempo real.
+- **Funcionalidades**:
+  - Visualizar stock actual por producto/ubicación.
+  - Alertas automáticas para stock bajo o crítico.
+  - Histórico de movimientos (entradas/salidas).
+
+### 3. **Módulo de Movimientos** *(Unifica Entradas/Salidas)*
+- **Propósito**: Registrar transacciones de inventario.
+- **Funcionalidades**:
+  - Registrar **entradas** (compra, donación) vinculadas a proveedores.
+  - Registrar **salidas** (consumo, préstamo) asociadas a proyectos.
+  - Generar comprobantes (PDF/Excel) para auditoría.
+
+### 4. **Módulo de Ubicaciones**
+- **Propósito**: Gestionar la distribución física de los productos.
+- **Funcionalidades**:
+  - Definir ubicaciones jerárquicas (ej: `A2-Nivel 4`).
+  - Mapa visual de almacenes/secciones.
+  - Búsqueda de productos por ubicación.
 
 ---
 
-## 📥 3. Módulo de Entradas
-- Registro de entrada de productos al inventario.
-- Captura de proveedor, fecha, cantidad, ubicación destino y observaciones.
-- Actualización automática de existencias.
-- Historial de entradas por producto.
+## 🔜 Módulos Futuros
+
+### 5. **Módulo de Proveedores**
+- **Propósito**: Centralizar información de proveedores.
+- **Funcionalidades**:
+  - Catálogo de proveedores con datos de contacto.
+  - Historial de compras y rendimiento.
+  - Integración con entradas de inventario.
+
+### 6. **Módulo de Mantenimientos**
+- **Propósito**: Programar y registrar mantenimientos preventivos.
+- **Funcionalidades**:
+  - Calendario de revisiones (ej: limpieza de generadores).
+  - Bitácoras de mantenimiento con evidencia (fotos/docs).
+  - Alertas para próximas actividades.
+
+### 7. **Módulo de Alertas/Notificaciones**
+- **Propósito**: Automatizar respuestas a eventos críticos.
+- **Funcionalidades**:
+  - Notificaciones por correo/API para:
+    - Stock por debajo del mínimo.
+    - Mantenimientos pendientes.
+    - Movimientos inusuales.
+
+### 8. **Módulo de Usuarios y Roles**
+- **Propósito**: Gestionar acceso y permisos.
+- **Funcionalidades**:
+  - Roles predefinidos (Almacenista, Supervisor, Gerente).
+  - Permisos granulares (ej: "Aprobar salidas", "Editar productos").
+
+### 9. **Módulo de Reportes**
+- **Propósito**: Generar análisis para la toma de decisiones.
+- **Funcionalidades**:
+  - Reportes de rotación de inventario.
+  - Histórico de movimientos por proyecto/proveedor.
+  - Costos asociados a stock obsoleto.
 
 ---
 
-## 📤 4. Módulo de Salidas
-- Registro de salidas por producto.
-- Validación de disponibilidad antes de realizar una salida.
-- Captura de responsable, destino, cantidad y motivo.
-- Historial de salidas por producto.
+## 🚀 Recomendaciones Clave
+- **Unificar Entradas/Salidas**: Simplifica la trazabilidad y reduce redundancias.
+- **Priorizar Proveedores y Alertas**: Evita datos duplicados y mejora la proactividad.
+- **Integrar Mantenimientos**: Critico para equipos costosos (generadores, herramientas).
+- **Usar Índices y Triggers**: Optimiza consultas de stock y actualizaciones en tiempo real.
 
 ---
-
-## 📍 5. Módulo de Ubicaciones
-- Registro de ubicaciones físicas (pasillos, estantes, bodegas, etc.).
-- Asociación de productos a una o varias ubicaciones.
-- Consulta rápida de dónde se encuentra cada producto.
-
----
-
-## 👥 6. Módulo de Usuarios y Roles *(futuro)*
-- Registro de usuarios con roles definidos (administrador, operador).
-- Control de acceso a funciones del sistema.
-- Seguridad básica y autenticación (Laravel Breeze o Laravel Sanctum).
-
----
-
-## 📊 7. Módulo de Reportes *(futuro)*
-- Generación de reportes de movimientos de inventario.
-- Filtros por fechas, productos o ubicaciones.
-- Exportación a PDF o Excel.
-
----
-
-Estos módulos están diseñados para desarrollarse de manera incremental, permitiendo entregar versiones funcionales del sistema rápidamente mientras se mejora su robustez y características a lo largo del tiempo.
 
