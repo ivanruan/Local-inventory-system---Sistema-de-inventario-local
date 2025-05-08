@@ -11,44 +11,44 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class User
+ * Class Product
  * 
  * @property int $id
+ * @property string $code
  * @property string $name
- * @property string $email
- * @property Carbon|null $email_verified_at
- * @property string $password
- * @property string $rol
- * @property string|null $remember_token
+ * @property string $unit
+ * @property int $stock
+ * @property int $ubication_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
+ * @property Ubication $ubication
  * @property Collection|Input[] $inputs
  * @property Collection|Output[] $outputs
  *
  * @package App\Models
  */
-class User extends Model
+class Product extends Model
 {
-	protected $table = 'users';
+	protected $table = 'products';
 
 	protected $casts = [
-		'email_verified_at' => 'datetime'
-	];
-
-	protected $hidden = [
-		'password',
-		'remember_token'
+		'stock' => 'int',
+		'ubication_id' => 'int'
 	];
 
 	protected $fillable = [
+		'code',
 		'name',
-		'email',
-		'email_verified_at',
-		'password',
-		'rol',
-		'remember_token'
+		'unit',
+		'stock',
+		'ubication_id'
 	];
+
+	public function ubication()
+	{
+		return $this->belongsTo(Ubication::class);
+	}
 
 	public function inputs()
 	{
