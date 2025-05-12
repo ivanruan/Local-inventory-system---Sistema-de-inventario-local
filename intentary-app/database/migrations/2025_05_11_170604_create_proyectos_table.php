@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ubications', function (Blueprint $table) {
-            $table->id();
-	    $table->string('name');
+        Schema::create('proyectos', function (Blueprint $table) {
+            $table->id(); // id auto-incremental
+
+            $table->string('nombre', 100)
+                  ->unique()
+                  ->comment('Nombre del proyecto');
+
             $table->timestamps();
+
+            // Índice para búsquedas frecuentes por nombre
+            $table->index('nombre');
         });
     }
 
@@ -23,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ubications');
+        Schema::dropIfExists('proyectos');
     }
 };
