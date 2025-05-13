@@ -29,8 +29,8 @@ class ProductoTest extends TestCase
     public function calculo_de_stock_seguridad_no_es_mayor_que_stock_maximo()
     {
         $producto = Producto::factory()->create([
-            'stock_seguridad' => 20,
-            'stock_maximo'    => 15,
+            'stock_seguridad' => 5,
+            'stock_maximo'    => 10,
         ]);
 
         $this->assertTrue(

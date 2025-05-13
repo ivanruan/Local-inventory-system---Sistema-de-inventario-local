@@ -20,4 +20,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::apiResource('marcas', MarcaController::class);
 Route::apiResource('proveedores', ProveedorController::class);
+Route::apiResource('categorias', CategoriaController::class);
+Route::apiResource('proyectos', ProyectoController::class);
+Route::apiResource('mantenimientos', MantenimientoController::class);
+Route::apiResource('ubicaciones', UbicacionController::class);
+
+
+
+
 

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Models\Categoria;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\WithFaker;
 
 class CategoriaTest extends TestCase
 {
@@ -16,6 +16,11 @@ class CategoriaTest extends TestCase
         $response = $this->postJson('/api/categorias', [
             'nombre' => 'Electrónica',
         ]);
+
+        // Debug si falla
+        if ($response->status() !== 201) {
+            dump($response->json());
+        }
 
         $response->assertStatus(201)
                  ->assertJsonFragment(['nombre' => 'Electrónica']);
@@ -44,7 +49,6 @@ class CategoriaTest extends TestCase
         $response = $this->deleteJson("/api/categorias/{$categoria->id}");
 
         $response->assertNoContent();
-
         $this->assertDatabaseMissing('categorias', ['id' => $categoria->id]);
     }
 }

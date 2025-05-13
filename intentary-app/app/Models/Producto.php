@@ -128,5 +128,17 @@ class Producto extends Model
     {
         return $this->hasMany(Mantenimiento::class);
     }
+
+    	// En app/Models/Producto.php
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($producto) {
+            if ($producto->stock_seguridad > $producto->stock_maximo) {
+               throw new \Exception('El stock de seguridad no puede ser mayor al stock máximo');
+           }
+        });
+    }
 }
 
