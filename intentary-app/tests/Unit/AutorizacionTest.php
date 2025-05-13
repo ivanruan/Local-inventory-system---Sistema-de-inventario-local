@@ -7,7 +7,6 @@ use App\Models\Autorizacion;
 use App\Models\MovimientoInventario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use PHPUnit\Framework\TestCase;
 
 class AutorizacionTest extends TestCase
 {

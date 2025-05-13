@@ -8,30 +8,32 @@ use Tests\TestCase;
 use App\Models\Adjunto;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\MovimientoInventario;
 
 class AdjuntoTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_usuario_puede_subir_adjunto()
+    /** @test */
+    public function puede_crearse_un_adjunto()
     {
-        Storage::fake('public');
+        $movimiento = MovimientoInventario::factory()->create();
 
-        $file = UploadedFile::fake()->create('documento.pdf', 500, 'application/pdf');
-
-        $response = $this->postJson('/api/adjuntos', [
-            'tipo' => 'App\\Models\\Producto',
-            'relacionado_id' => 1,
-            'archivo' => $file,
+        $adjunto = Adjunto::factory()->create([
+            'movimiento_id' => $movimiento->id,
         ]);
 
-        $response->assertStatus(201);
         $this->assertDatabaseHas('adjuntos', [
-            'nombre_original' => 'documento.pdf',
-            'extension' => 'pdf',
+            'id' => $adjunto->id,
+            'movimiento_id' => $movimiento->id,
         ]);
+    }
 
-        Storage::disk('public')->assertExists('adjuntos/' . $response->json('nombre_guardado'));
+    /** @test */
+    public function un_adjunto_pertenece_a_un_movimiento()
+    {
+        $adjunto = Adjunto::factory()->create();
+
+        $this->assertInstanceOf(MovimientoInventario::class, $adjunto->movimiento);
     }
 }

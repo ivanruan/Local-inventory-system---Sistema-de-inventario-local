@@ -5,14 +5,14 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Marca>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Proveedor>
  */
-class MarcaFactory extends Factory
+class ProveedorFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'nombre' => $this->faker->unique()->company,
+            'nombre' => $this->faker->company(),
         ];
     }
 }

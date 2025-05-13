@@ -8,15 +8,16 @@ class StoreAdjuntoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Cambia a lógica de autorización si es necesario
+        return true; // Ajusta según el control de acceso
     }
 
     public function rules(): array
     {
         return [
-            'tipo' => 'required|string|max:100',
-            'relacionado_id' => 'required|integer',
-            'archivo' => 'required|file|max:5120', // Máx 5MB
+            'movimiento_id' => ['required', 'exists:movimientos_inventario,id'],
+            'tipo'          => ['nullable', 'string', 'max:50'],
+            'ruta_archivo'  => ['required', 'string', 'max:255'],
+            'descripcion'   => ['nullable', 'string'],
         ];
     }
 }

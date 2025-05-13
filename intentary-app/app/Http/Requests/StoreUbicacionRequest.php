@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateAdjuntoRequest extends FormRequest
+class StoreUbicacionRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +14,8 @@ class UpdateAdjuntoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tipo'         => ['nullable', 'string', 'max:50'],
-            'ruta_archivo' => ['sometimes', 'string', 'max:255'],
-            'descripcion'  => ['nullable', 'string'],
+            'codigo' => 'required|string|max:10|unique:ubicaciones,codigo',
+            'nivel' => 'required|integer|min:1',
         ];
     }
 }

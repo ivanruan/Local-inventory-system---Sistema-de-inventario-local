@@ -32,7 +32,7 @@ class MovimientoInventario extends Model
     use HasFactory;
 
     // Nombre de la tabla si fuera distinto
-    // protected $table = 'movimientos_inventario';
+    protected $table = 'movimientos_inventario';
 
     /**
      * Atributos asignables masivamente.

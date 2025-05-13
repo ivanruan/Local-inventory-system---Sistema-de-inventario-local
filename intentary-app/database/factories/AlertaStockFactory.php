@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Producto;
+use App\Models\AlertaStock;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

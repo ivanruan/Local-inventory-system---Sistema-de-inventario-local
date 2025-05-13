@@ -2,29 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Adjunto extends Model
 {
     use HasFactory;
 
+    protected $table = 'adjuntos';
+
     protected $fillable = [
+        'movimiento_id',
         'tipo',
-        'relacionado_id',
-        'nombre_original',
-        'nombre_guardado',
-        'extension',
-        'tamanio_kb',
-        'url',
+        'ruta_archivo',
+        'descripcion',
     ];
 
-    /**
-     * Relación polimórfica para adjuntos
-     */
-    public function relacionado()
+    public $timestamps = true;
+
+    public function movimiento()
     {
-        return $this->morphTo(__FUNCTION__, 'tipo', 'relacionado_id');
+        return $this->belongsTo(MovimientoInventario::class, 'movimiento_id');
     }
 }
 

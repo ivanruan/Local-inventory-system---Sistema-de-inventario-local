@@ -25,7 +25,7 @@ class AlertaStock extends Model
 {
     use HasFactory;
 
-    // protected $table = 'alertas_stock';
+    protected $table = 'alertas_stock';
 
     /**
      * Campos asignables masivamente.
