@@ -1,0 +1,17 @@
+.
+├── docs
+│   ├── en
+│   └── es
+└── intentary-app
+    ├── app
+    ├── bootstrap
+    ├── config
+    ├── database
+    ├── public
+    ├── resources
+    ├── routes
+    ├── storage
+    ├── tests
+    └── vendor
+
+14 directories
