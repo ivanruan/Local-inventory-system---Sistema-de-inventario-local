@@ -28,18 +28,26 @@ class UbicacionController extends Controller
     }
 
     // app/Http/Controllers/UbicacionController.php
-public function update(UpdateUbicacionRequest $request, Ubicacion $ubicacion)
+public function update(UpdateUbicacionRequest $request, $id)
 {
-    try {
-        $ubicacion->update($request->validated());
-        return response()->json($ubicacion);
-    } catch (\Exception $e) {
+    // Buscar manualmente para mejor diagnóstico
+    $ubicacion = Ubicacion::find($id);
+    
+    if (!$ubicacion) {
         return response()->json([
-            'message' => 'Error al actualizar la ubicación',
-            'error' => $e->getMessage()
-        ], 500);
+            'error' => 'Ubicación no encontrada',
+            'received_id' => $id,
+            'existing_ids' => Ubicacion::all()->pluck('id')
+        ], 404);
     }
-} 
+    
+    $ubicacion->update($request->validated());
+    
+    return response()->json([
+        'success' => true,
+        'data' => $ubicacion->fresh()
+    ], 200);
+}
 
    public function destroy(Ubicacion $ubicacion)
 {

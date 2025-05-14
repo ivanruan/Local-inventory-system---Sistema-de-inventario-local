@@ -37,5 +37,20 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::apiResource('usuarios', UsuarioController::class);
 });
 
-Route::apiResource('marcas', MarcaController::class)->except(['index']);
+//Route::apiResource('marcas', MarcaController::class)->except(['index']);
 Route::get('/marcas', [MarcaController::class, 'index']); // Public path
+//
+Route::put('/debug/ubicaciones/{id}', function(Request $request, $id) {
+    $ubicacion = Ubicacion::find($id);
+    
+    if (!$ubicacion) {
+        return response()->json([
+            'error' => 'Ubicación no encontrada',
+            'id_recibido' => $id,
+            'existentes' => Ubicacion::all()->pluck('id')
+        ], 404);
+    }
+    
+    $ubicacion->update($request->all());
+    return $ubicacion;
+});

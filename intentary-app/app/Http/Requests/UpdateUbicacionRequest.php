@@ -14,8 +14,17 @@ class UpdateUbicacionRequest extends FormRequest
     public function rules()
     {
         return [
-            'codigo' => 'sometimes|string|max:50|unique:ubicaciones,codigo,' . $this->ubicacion->id,
+            'codigo' => 'sometimes|string|max:50|unique:ubicaciones,codigo,' . $this->getUbicacionId(),
             'nivel' => 'sometimes|integer',
         ];
     }
+
+    private function getUbicacionId()
+    {
+        $ubicacion = $this->route('ubicacion');
+
+        // Puede ser un modelo o solo el ID (int)
+        return is_object($ubicacion) ? $ubicacion->id : $ubicacion;
+    }
 }
+
