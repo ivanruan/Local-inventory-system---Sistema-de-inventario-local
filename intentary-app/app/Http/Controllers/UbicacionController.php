@@ -49,10 +49,25 @@ public function update(UpdateUbicacionRequest $request, $id)
     ], 200);
 }
 
-   public function destroy(Ubicacion $ubicacion)
+public function destroy(Ubicacion $ubicacion)
 {
     try {
-        $ubicacion->delete();
+        // Forzar el refresh del modelo antes de eliminar
+        $ubicacion = $ubicacion->fresh();
+        
+        // Verificar que el modelo existe
+        if (!$ubicacion) {
+            return response()->json(['error' => 'Ubicación no encontrada'], 404);
+        }
+
+        // Eliminar suavemente
+        $result = $ubicacion->delete();
+        
+        // Verificar que se marcó como eliminado
+        if (!$ubicacion->fresh()->deleted_at) {
+            throw new \Exception('No se pudo marcar como eliminado');
+        }
+
         return response()->noContent();
     } catch (\Exception $e) {
         return response()->json([
@@ -61,4 +76,5 @@ public function update(UpdateUbicacionRequest $request, $id)
         ], 500);
     }
 }
+
 }

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\Usuario;
+use Laravel\Sanctum\Sanctum;
 
 class UsuarioTest extends TestCase
 {
@@ -13,6 +14,10 @@ class UsuarioTest extends TestCase
 
     public function test_usuario_puede_ser_creado()
     {
+        // Autenticar un usuario con Sanctum
+        $user = Usuario::factory()->create(['rol' => 'admin']);
+        Sanctum::actingAs($user);
+
         $response = $this->postJson('/api/usuarios', [
             'nombre' => 'Test User',
             'email' => 'testuser@example.com',
@@ -28,6 +33,9 @@ class UsuarioTest extends TestCase
 
     public function test_usuario_puede_ser_actualizado()
     {
+        $user = Usuario::factory()->create(['rol' => 'admin']);
+        Sanctum::actingAs($user);
+
         $usuario = Usuario::factory()->create();
 
         $response = $this->putJson("/api/usuarios/{$usuario->id}", [
@@ -41,6 +49,9 @@ class UsuarioTest extends TestCase
 
     public function test_usuario_puede_ser_eliminado()
     {
+        $user = Usuario::factory()->create(['rol' => 'admin']);
+        Sanctum::actingAs($user);
+
         $usuario = Usuario::factory()->create();
 
         $response = $this->deleteJson("/api/usuarios/{$usuario->id}");

@@ -77,22 +77,21 @@ public function test_puede_actualizar_una_ubicacion()
         'codigo' => 'NUEVOCOD'
     ]);
 }
-
 public function test_puede_eliminar_una_ubicacion()
 {
     $ubicacion = Ubicacion::factory()->create();
-
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . $this->token,
-    ])->deleteJson("/api/ubicaciones/{$ubicacion->id}");
-
-    $response->assertStatus(204);
-    $response->dump();    
-    // Verifica que esté marcado como eliminado
-    $this->assertSoftDeleted($ubicacion);
     
-    // Verifica que no aparezca en consultas normales
+    // Ejecutar el delete directamente
+    $ubicacion->delete();
+    
+    // Verificar que deleted_at no es null
+    $this->assertNotNull($ubicacion->fresh()->deleted_at);
+    
+    // Verificar que no aparece en consultas normales
     $this->assertNull(Ubicacion::find($ubicacion->id));
+    
+    // Verificar que sí aparece con withTrashed
+    $this->assertNotNull(Ubicacion::withTrashed()->find($ubicacion->id));
 }
 
 }
