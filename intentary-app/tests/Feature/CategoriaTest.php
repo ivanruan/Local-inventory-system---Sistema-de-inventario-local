@@ -3,24 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\Categoria;
+use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 
 class CategoriaTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithFaker;
 
     public function test_categoria_can_be_created(): void
     {
-        $response = $this->postJson('/api/categorias', [
+        $usuario = Usuario::factory()->create(); // crea un usuario
+
+        $response = $this->actingAs($usuario, 'sanctum')->postJson('/api/categorias', [
             'nombre' => 'Electrónica',
         ]);
 
-        // Debug si falla
-        if ($response->status() !== 201) {
-            dump($response->json());
-        }
+        dump($response->status(), $response->json());
 
         $response->assertStatus(201)
                  ->assertJsonFragment(['nombre' => 'Electrónica']);
@@ -30,11 +30,15 @@ class CategoriaTest extends TestCase
 
     public function test_categoria_can_be_updated(): void
     {
+        $usuario = Usuario::factory()->create();
+
         $categoria = Categoria::factory()->create(['nombre' => 'Original']);
 
-        $response = $this->putJson("/api/categorias/{$categoria->id}", [
+        $response = $this->actingAs($usuario, 'sanctum')->putJson("/api/categorias/{$categoria->id}", [
             'nombre' => 'Actualizada',
         ]);
+
+        dump($response->status(), $response->json());
 
         $response->assertOk()
                  ->assertJsonFragment(['nombre' => 'Actualizada']);
@@ -44,11 +48,17 @@ class CategoriaTest extends TestCase
 
     public function test_categoria_can_be_deleted(): void
     {
+        $usuario = Usuario::factory()->create();
+
         $categoria = Categoria::factory()->create();
 
-        $response = $this->deleteJson("/api/categorias/{$categoria->id}");
+        $response = $this->actingAs($usuario, 'sanctum')->deleteJson("/api/categorias/{$categoria->id}");
+
+        dump($response->status(), $response->getContent());
 
         $response->assertNoContent();
+
         $this->assertDatabaseMissing('categorias', ['id' => $categoria->id]);
     }
 }
+

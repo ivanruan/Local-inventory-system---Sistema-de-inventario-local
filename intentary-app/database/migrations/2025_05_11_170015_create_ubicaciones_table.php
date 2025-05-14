@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('nivel')
                   ->default(1)
                   ->comment('Nivel o piso de la ubicación en el almacén');
+		
+ 	    $table->softDeletes();
 
             $table->timestamps();
 

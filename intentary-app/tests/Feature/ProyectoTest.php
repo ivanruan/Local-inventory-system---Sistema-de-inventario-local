@@ -6,14 +6,26 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\Proyecto;
+use App\Models\Usuario;
 
 class ProyectoTest extends TestCase
 {
-	use RefreshDatabase;
+    use RefreshDatabase;
 
-    public function test_proyecto_can_be_created(): void
+    protected function setUp(): void
     {
-        $response = $this->postJson('/api/proyectos', [
+        parent::setUp();
+        
+        // Crear y autenticar un usuario para todas las pruebas
+        $this->usuario = Usuario::factory()->create();
+        $this->token = $this->usuario->createToken('test-token')->plainTextToken;
+    }
+
+    public function test_proyecto_can_be_created()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/proyectos', [
             'nombre' => 'Nuevo Proyecto',
         ]);
 
@@ -23,11 +35,13 @@ class ProyectoTest extends TestCase
         $this->assertDatabaseHas('proyectos', ['nombre' => 'Nuevo Proyecto']);
     }
 
-    public function test_proyecto_can_be_updated(): void
+    public function test_proyecto_can_be_updated()
     {
-        $proyecto = Proyecto::factory()->create(['nombre' => 'Viejo Nombre']);
+        $proyecto = Proyecto::factory()->create();
 
-        $response = $this->putJson("/api/proyectos/{$proyecto->id}", [
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->putJson("/api/proyectos/{$proyecto->id}", [
             'nombre' => 'Nombre Actualizado',
         ]);
 
@@ -37,11 +51,13 @@ class ProyectoTest extends TestCase
         $this->assertDatabaseHas('proyectos', ['nombre' => 'Nombre Actualizado']);
     }
 
-    public function test_proyecto_can_be_deleted(): void
+    public function test_proyecto_can_be_deleted()
     {
         $proyecto = Proyecto::factory()->create();
 
-        $response = $this->deleteJson("/api/proyectos/{$proyecto->id}");
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->deleteJson("/api/proyectos/{$proyecto->id}");
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('proyectos', ['id' => $proyecto->id]);

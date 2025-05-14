@@ -9,7 +9,13 @@ class StoreCategoriaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Verifica si estamos en entorno de testing
+        // Permitir la autorización durante tests y ejecución normal
+        return true;
+    }
+
+    public function rules(): array
+    {
+        // Si no existe la tabla (ej. durante tests iniciales), evita la regla 'unique'
         if (app()->environment('testing') && !Schema::hasTable('categorias')) {
             return [
                 'nombre' => 'required|string|max:100'
@@ -20,9 +26,5 @@ class StoreCategoriaRequest extends FormRequest
             'nombre' => 'required|string|max:100|unique:categorias,nombre'
         ];
     }
-
-    public function rules(): array
-    {
-        return $this->authorize();
-    }
 }
+

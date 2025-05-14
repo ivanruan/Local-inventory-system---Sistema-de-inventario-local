@@ -27,17 +27,30 @@ class UbicacionController extends Controller
         return response()->json($ubicacion);
     }
 
-    public function update(UpdateUbicacionRequest $request, Ubicacion $ubicacion)
-    {
+    // app/Http/Controllers/UbicacionController.php
+public function update(UpdateUbicacionRequest $request, Ubicacion $ubicacion)
+{
+    try {
         $ubicacion->update($request->validated());
-
         return response()->json($ubicacion);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error al actualizar la ubicación',
+            'error' => $e->getMessage()
+        ], 500);
     }
+} 
 
-    public function destroy(Ubicacion $ubicacion)
-    {
+   public function destroy(Ubicacion $ubicacion)
+{
+    try {
         $ubicacion->delete();
-
-        return response()->json(null, 204);
+        return response()->noContent();
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error al eliminar la ubicación',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 }

@@ -4,19 +4,18 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreUbicacionRequest extends FormRequest
+class UpdateUbicacionRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
         return true;
     }
 
-    public function rules(): array
+    public function rules()
     {
         return [
-            'codigo' => 'required|string|max:10|unique:ubicaciones,codigo',
-            'nivel' => 'required|integer|min:1',
+            'codigo' => 'sometimes|string|max:50|unique:ubicaciones,codigo,' . $this->ubicacion->id,
+            'nivel' => 'sometimes|integer',
         ];
     }
 }
-

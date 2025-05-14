@@ -2,6 +2,13 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\ProyectoController;
+use App\Http\Controllers\MantenimientoController;
+use App\Http\Controllers\UbicacionController;
+use App\Http\Controllers\UsuarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,14 +25,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('marcas', MarcaController::class);
-Route::apiResource('proveedores', ProveedorController::class);
-Route::apiResource('categorias', CategoriaController::class);
-Route::apiResource('proyectos', ProyectoController::class);
-Route::apiResource('mantenimientos', MantenimientoController::class);
-Route::apiResource('ubicaciones', UbicacionController::class);
 
+// Grupo de rutas protegidas por autenticación
+Route::middleware('auth:sanctum')->group(function() {
+    Route::apiResource('marcas', MarcaController::class)->except(['index']);
+    Route::apiResource('proveedores', ProveedorController::class);
+    Route::apiResource('categorias', CategoriaController::class);
+    Route::apiResource('proyectos', ProyectoController::class);
+    Route::apiResource('mantenimientos', MantenimientoController::class);
+    Route::apiResource('ubicaciones', UbicacionController::class);
+    Route::apiResource('usuarios', UsuarioController::class);
+});
 
-
-
-
+Route::apiResource('marcas', MarcaController::class)->except(['index']);
+Route::get('/marcas', [MarcaController::class, 'index']); // Public path
