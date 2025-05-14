@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Categoria;
+use App\Models\Ubicacion;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Http\Requests\StoreProductoRequest;
 use App\Http\Requests\UpdateProductoRequest;
@@ -23,13 +26,13 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        // Asume que pasas las colecciones de marcas, categorías y ubicaciones
-        return view('productos.create', [
-            'marcas'      => \App\Models\Marca::all(),
-            'categorias'  => \App\Models\Categoria::all(),
-            'ubicaciones' => \App\Models\Ubicacion::all(),
-        ]);
+        $marcas = Marca::all();
+        $categorias = Categoria::all();
+        $ubicaciones = Ubicacion::all();
+
+        return view('productos.create', compact('marcas', 'categorias', 'ubicaciones'));
     }
+
 
     /**
      * Almacena un nuevo producto en la base de datos.
