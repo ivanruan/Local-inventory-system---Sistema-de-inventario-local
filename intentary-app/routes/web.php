@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AlertaStockController;
+use App\Http\Controllers\MovimientoInventario;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,7 +19,19 @@ use App\Http\Controllers\ProductoController;
 */
 
 Route::get('/', function () {
-    return redirect()->route('productos.index');
+    return view('dashboard');
 });
 
 Route::resource('productos', ProductoController::class);
+
+Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
+
+// Login
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::resource('alertas', AlertaStockController::class);
+Route::resource('movimientos', MovimientoInventario::class);
+
+
+

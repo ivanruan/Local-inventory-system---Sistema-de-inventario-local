@@ -38,9 +38,29 @@ class ProductoController extends Controller
      * Almacena un nuevo producto en la base de datos.
      */
     public function store(StoreProductoRequest $request)
-    {
-        $data = $request->validated();
-        Producto::create($data);
+    {	
+	$data = $request->validated();
+
+    if ($data['marca_id'] === 'otra') {
+        $marca = Marca::create(['nombre' => $data['nueva_marca']]);
+        $data['marca_id'] = $marca->id;
+    }
+
+    if ($data['categoria_id'] === 'otra') {
+        $categoria = Categoria::create(['nombre' => $data['nueva_categoria']]);
+        $data['categoria_id'] = $categoria->id;
+    }
+
+    if ($data['ubicacion_id'] === 'otra') {
+        $ubicacion = Ubicacion::create(['nombre' => $data['nueva_ubicacion']]);
+        $data['ubicacion_id'] = $ubicacion->id;
+    }
+
+    // Eliminar los campos auxiliares
+    unset($data['nueva_marca'], $data['nueva_categoria'], $data['nueva_ubicacion']);
+
+	
+	Producto::create($data);
         return redirect()->route('productos.index')
                          ->with('success', 'Producto creado correctamente.');
     }

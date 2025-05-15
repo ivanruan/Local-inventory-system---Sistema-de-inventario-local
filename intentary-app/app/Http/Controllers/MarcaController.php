@@ -14,13 +14,24 @@ class MarcaController extends Controller
         return response()->json(Marca::all());
     }
 
+    // En MarcaController.php
     public function store(StoreMarcaRequest $request)
     {
-        $marca = Marca::create($request->validated());
-
-        return response()->json($marca, 201);
+   	 try {
+  	      $marca = Marca::create($request->validated());
+       		 return response()->json([
+            	'id' => $marca->id,
+            	'nombre' => $marca->nombre,
+            	'message' => 'Marca creada exitosamente'
+        	], 201);
+    	} catch (\Exception $e) {
+        	return response()->json([
+            	'message' => 'Error al crear la marca',
+            	'error' => $e->getMessage()
+        	], 500);
+    	}
     }
-
+   
     public function show(Marca $marca)
     {
         return response()->json($marca);

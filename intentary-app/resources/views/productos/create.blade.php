@@ -34,27 +34,30 @@
         <div class="form-group mt-3">
             <label for="marca_id">Marca</label>
             <div class="d-flex">
-                <select name="marca_id" id="marca_id" class="form-control me-2">
+                <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleMarcaInput(this)">
                     @foreach($marcas as $marca)
                         <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
                     @endforeach
+                    <option value="nueva">Agregar nuevo</option>
                 </select>
-                <input type="text" id="nueva_marca" class="form-control me-2" placeholder="Nueva marca">
-                <button type="button" class="btn btn-outline-primary" onclick="agregarMarca()">Agregar</button>
+                <input type="text" name="nueva_marca" id="nueva_marca" class="form-control me-2" placeholder="Nueva marca" style="display:none;">
+                <button type="button" class="btn btn-outline-primary" id="btn_agregar_marca" style="display:none;" onclick="agregarMarca()">Agregar</button>
             </div>
         </div>
+
 
         <!-- Categoría -->
         <div class="form-group mt-3">
             <label for="categoria_id">Categoría</label>
             <div class="d-flex">
-                <select name="categoria_id" id="categoria_id" class="form-control me-2">
-                    @foreach($categorias as $categoria)
-                        <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
+                <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleMarcaInput(this)">
+                    @foreach($marcas as $marca)
+                        <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
                     @endforeach
+                    <option value="nueva">Agregar nuevo</option>
                 </select>
-                <input type="text" id="nueva_categoria" class="form-control me-2" placeholder="Nueva categoría">
-                <button type="button" class="btn btn-outline-primary" onclick="agregarCategoria()">Agregar</button>
+                <input type="text" name="nueva_marca" id="nueva_marca" class="form-control me-2" placeholder="Nueva marca" style="display:none;">
+                <button type="button" class="btn btn-outline-primary" id="btn_agregar_marca" style="display:none;">Agregar</button>
             </div>
         </div>
 
@@ -136,25 +139,18 @@
 
 <!-- JS para agregar nuevas opciones -->
 <script>
+    // Función para agregar nueva marca
     function agregarMarca() {
-        const nombre = document.getElementById('nueva_marca').value;
-        if (!nombre) return;
-
-        fetch('{{ route("marcas.store") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ nombre })
-        })
-        .then(res => res.json())
-        .then(data => {
-            let select = document.getElementById('marca_id');
-            let option = new Option(data.nombre, data.id, true, true);
-            select.append(option);
-            document.getElementById('nueva_marca').value = '';
-        });
+        var nombreMarca = document.getElementById('nueva_marca').value.trim();
+        
+        if (!nombreMarca) {
+            alert("Por favor ingrese un nombre para la nueva marca");
+            return;
+        }
+        
+        // Aquí iría tu llamada AJAX para guardar la marca
+        console.log("Marca a agregar:", nombreMarca);
+        // fetch(...) tu código AJAX aquí
     }
 
     function agregarCategoria() {
@@ -197,6 +193,29 @@
             select.append(option);
             document.getElementById('nueva_ubicacion').value = '';
         });
+    }
+    
+    function toggleMarcaInput(select) {
+        console.log("Valor seleccionado:", select.value); // Para depuración
+        
+        // Obtener elementos de forma segura
+        var marcaInput = document.getElementById('nueva_marca');
+        var agregarBtn = document.getElementById('btn_agregar_marca');
+        
+        // Verificar que los elementos existen
+        if (!marcaInput || !agregarBtn) {
+            console.error("Error: No se encontraron los elementos del formulario");
+            return;
+        }
+        
+        // Mostrar/ocultar según la selección
+        if (select.value === "nueva") {
+            marcaInput.style.display = "block";
+            agregarBtn.style.display = "block";
+        } else {
+            marcaInput.style.display = "none";
+            agregarBtn.style.display = "none";
+        }
     }
 </script>
 @endsection
