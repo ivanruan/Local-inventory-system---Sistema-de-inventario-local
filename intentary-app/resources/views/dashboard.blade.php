@@ -20,13 +20,13 @@
         </div>
     </div>
 
-    <!-- Proveedores -->
-    <div class="col-md-4 mb-4">
-        <div class="card text-white bg-success h-100">
+     <!-- Manteminimientos -->
+     <div class="col-md-6 mb-4">
+        <div class="card text-white bg-info h-100">
             <div class="card-body">
-                <h5 class="card-title">Proveedores</h5>
-                <p class="card-text">Consulta y administra tus proveedores.</p>
-                <a href="{{ route('proveedores.index') }}" class="btn btn-light">Ver proveedores</a>
+                <h5 class="card-title">Mantenimientos</h5>
+                <p class="card-text">Registro de mantenimientos</p>
+                <a href="{{ route('mantenimientos.index') }}" class="btn btn-light">Ver mantenimientos</a>
             </div>
         </div>
     </div>
@@ -66,4 +66,5 @@
         </div>
     </div>
 </div>
+    
 @endsection

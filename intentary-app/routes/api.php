@@ -32,9 +32,9 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::apiResource('proveedores', ProveedorController::class);
     Route::apiResource('categorias', CategoriaController::class);
     Route::apiResource('proyectos', ProyectoController::class);
-    Route::apiResource('mantenimientos', MantenimientoController::class);
+//    Route::apiResource('mantenimientos', MantenimientoController::class);
     Route::apiResource('ubicaciones', UbicacionController::class);
-    Route::apiResource('usuarios', UsuarioController::class);
+    //Route::apiResource('usuarios', UsuarioController::class);
 });
 
 //Route::apiResource('marcas', MarcaController::class)->except(['index']);

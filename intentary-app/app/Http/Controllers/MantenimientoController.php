@@ -16,9 +16,10 @@ class MantenimientoController extends Controller
 	
     use ValidatesRequests;
 
-    public function index(): JsonResponse
+        public function index()
     {
-        return response()->json(Mantenimiento::with('producto')->latest()->get());
+        $mantenimientos = Mantenimiento::with('producto')->get();
+        return view('mantenimientos.index', compact('mantenimientos'));
     }
 
     

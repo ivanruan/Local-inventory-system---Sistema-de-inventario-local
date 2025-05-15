@@ -12,7 +12,11 @@ class UsuarioController extends Controller
 {
     public function index()
     {
-        return response()->json(Usuario::all());
+        // Obtener todos los usuarios, ordenados por fecha de creación descendente
+        $usuarios = Usuario::orderBy('created_at', 'desc')->get();
+
+        // Retornar la vista con los usuarios
+        return view('usuarios.index', compact('usuarios'));
     }
 
     public function store(StoreUsuarioRequest $request)
