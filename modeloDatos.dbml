@@ -1,0 +1,142 @@
+Table marcas {
+  id              int       [pk, increment]
+  nombre          varchar(50)   [not null]
+}
+
+Table categorias {
+  id              int       [pk, increment]
+  nombre          varchar(50)   [not null]
+}
+
+Table ubicaciones {
+  id              int       [pk, increment]
+  codigo          varchar(10)   [not null]
+  nivel           int       [not null]
+}
+
+Table proveedores {
+  id              int       [pk, increment]
+  nombre          varchar(100)   [not null]
+}
+
+Table proyectos {
+  id              int       [pk, increment]
+  nombre          varchar(100)   [not null]
+}
+
+Table productos {
+  id               int        [pk, increment]
+  codigo           varchar(50)    [not null, unique]
+  nombre           varchar(100)    [not null]
+  especificacion   varchar(200)
+  marca_id         int        [ref: > marcas.id, not null]
+  categoria_id     int        [ref: > categorias.id, not null]
+  ubicacion_id     int        [ref: > ubicaciones.id, not null]
+  unidad           varchar(20)    [not null]
+  nivel            int        [not null]
+  stock_minimo     int        [not null, default: 0]
+  stock_actual     int        [not null, default: 0]
+  stock_maximo     int        [not null, default: 0]
+  stock_seguridad  int        [not null, default: 0]
+  duracion_inventario int     [not null, default: 0]  // en días
+  status           varchar(20)    [not null, note: "Activo|Inactivo|Obsoleto"]
+  costo            decimal(10,2)    [not null, default: 0.00]
+  vida_util        int        [not null, default: 0]  // en días
+  observaciones    text
+  created_at       timestamp  [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at       timestamp  [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Enum movimiento_tipo {
+  entrada
+  salida
+}
+
+Table movimientos_inventario {
+  id                   int             [pk, increment]
+  fecha_hora           datetime        [not null, default: `CURRENT_TIMESTAMP`]
+  tipo                 movimiento_tipo [not null]
+  cantidad             decimal(10,2)
+  producto_id          int             [ref: > productos.id, not null]
+  proveedor_id         int             [ref: > proveedores.id, null]
+  proyecto_id          int             [ref: > proyectos.id, null]
+  usuario_id           int             [ref: > usuarios.id, not null]
+  observaciones        text
+  tiempo_uso_acumulado decimal(10,2)
+  documento_ingreso    varchar(150)
+  motivo_salida        varchar(200)
+  procedimiento_disposicion text
+  created_at           timestamp       [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at           timestamp       [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table autorizaciones {
+  id                    int       [pk, increment]
+  movimiento_id         int       [ref: > movimientos_inventario.id, not null]
+  autorizador_nombre    varchar(100)
+  autorizador_cargo     varchar(100)
+  firma_url             varchar(200)
+  fecha_autorizacion    datetime  [not null]
+  observaciones         text
+  created_at            timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at            timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table adjuntos {
+  id             int       [pk, increment]
+  movimiento_id  int       [ref: > movimientos_inventario.id, not null]
+  tipo           varchar(50)
+  ruta_archivo   varchar(255)
+  descripcion    text
+  created_at     timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table alertas_stock {
+  id                   int       [pk, increment]
+  producto_id          int       [ref: > productos.id, not null]
+  fecha_generacion     datetime  [not null, default: `CURRENT_TIMESTAMP`]
+  tipo_alerta          varchar(30)   [not null, note: "'Stock Bajo','Stock Excedido','Vida Útil Límite'"]
+  nivel_critico        varchar(20)   [not null, note: "'Alto','Medio','Bajo'"]
+  resuelta             boolean   [not null, default: false]
+  resuelta_en          datetime  [null]
+  created_at           timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at           timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Enum mantenimiento_tipo {
+  preventivo
+  correctivo
+  limpieza
+}
+
+Enum mantenimiento_status {
+  pendiente
+  completado
+  cancelado
+}
+
+Table mantenimientos {
+  id                   int                 [pk, increment]
+  producto_id          int                 [ref: > productos.id, not null]
+  fecha_programada     datetime            [not null]
+  fecha_ejecucion      datetime            [null]
+  tipo                 mantenimiento_tipo  [not null]
+  descripcion          text
+  responsable          varchar(100)
+  status               mantenimiento_status [not null]
+  costo                decimal(10,2)
+  observaciones        text
+  created_at           timestamp           [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at           timestamp           [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table usuarios {
+  id            int          [pk, increment]
+  nombre        varchar(100) [not null]
+  email         varchar(100) [not null, unique]
+  password      varchar(255) [not null]
+  rol           varchar(50)  [not null, note: 'admin | operador | supervisor']
+  activo        boolean      [not null, default: true]
+  created_at    timestamp    [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at    timestamp    [not null, default: `CURRENT_TIMESTAMP`]
+}

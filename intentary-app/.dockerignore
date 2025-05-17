@@ -1,0 +1,9 @@
+vendor
+node_modules
+npm-debug.log
+.env
+.git
+docker-compose.yml
+Dockerfile
+*.md
+
