@@ -32,16 +32,14 @@ class ProductFormManager {
 
     // Handle Enter key presses
     handleEnterKey(e) {
-        if (e.target.matches('#nueva_marca, #nueva_categoria')) {
+        if (e.target.matches('#nueva_marca, #nueva_categoria, #nueva_ubicacion')) {
             e.preventDefault();
             const inputId = e.target.id;
             const tipo = inputId.replace('nueva_', '');
             
             if (tipo === 'marca') this.agregarMarca();
             else if (tipo === 'categoria') this.agregarCategoria();
-        } else if (e.target.matches('#nueva_ubicacion_codigo, #nueva_ubicacion_nivel')) {
-            e.preventDefault();
-            this.agregarUbicacion();
+            else if (tipo === 'ubicacion') this.agregarUbicacion();
         }
     }
 
@@ -57,23 +55,14 @@ class ProductFormManager {
             inputOrContainer.style.display = 'flex';
             button.style.display = 'block';
             
-            // Focus on the first input field
-            if (selectId === 'ubicacion_id') {
-                document.getElementById('nueva_ubicacion_codigo').focus();
-            } else {
-                inputOrContainer.focus();
-            }
+            // Focus on the input field
+            inputOrContainer.focus();
         } else {
             inputOrContainer.style.display = 'none';
             button.style.display = 'none';
             
             // Clear input values
-            if (selectId === 'ubicacion_id') {
-                document.getElementById('nueva_ubicacion_codigo').value = '';
-                document.getElementById('nueva_ubicacion_nivel').value = '';
-            } else {
-                inputOrContainer.value = '';
-            }
+            inputOrContainer.value = '';
         }
     }
 
@@ -89,11 +78,30 @@ class ProductFormManager {
 
     // Add new ubicacion
     agregarUbicacion() {
-        const codigo = document.getElementById('nueva_ubicacion_codigo').value.trim();
-        const nivel = document.getElementById('nueva_ubicacion_nivel').value.trim();
+        const input = document.getElementById('nueva_ubicacion');
+        const valor = input.value.trim();
 
-        if (!codigo || !nivel) {
-            alert('Por favor completa todos los campos: código y nivel.');
+        if (!valor) {
+            alert('Por favor ingresa el código y nivel de la ubicación (ej: A1 - 2).');
+            input.focus();
+            return;
+        }
+
+        // Parse the input to extract codigo and nivel
+        // Expected format: "A1 - 2" or "A1-2" or similar
+        const parts = valor.split(/\s*-\s*/);
+        if (parts.length !== 2) {
+            alert('Por favor usa el formato: Código - Nivel (ej: A1 - 2)');
+            input.focus();
+            return;
+        }
+
+        const codigo = parts[0].trim();
+        const nivel = parseInt(parts[1].trim());
+
+        if (!codigo || isNaN(nivel)) {
+            alert('Por favor verifica el formato: Código - Nivel (ej: A1 - 2)');
+            input.focus();
             return;
         }
 
@@ -112,7 +120,7 @@ class ProductFormManager {
             },
             body: JSON.stringify({ 
                 codigo: codigo,
-                nivel: parseInt(nivel)
+                nivel: nivel
             })
         })
         .then(response => {
@@ -131,13 +139,10 @@ class ProductFormManager {
             // Add new option to select
             this.addOptionToSelect('ubicacion_id', displayText, itemId);
             
-            // Hide inputs and button
-            document.getElementById('nueva_ubicacion_container').style.display = 'none';
+            // Hide input and button
+            input.style.display = 'none';
             button.style.display = 'none';
-            
-            // Clear input values
-            document.getElementById('nueva_ubicacion_codigo').value = '';
-            document.getElementById('nueva_ubicacion_nivel').value = '';
+            input.value = '';
 
             alert(`Ubicación "${displayText}" agregada exitosamente.`);
         })

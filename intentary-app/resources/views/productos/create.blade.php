@@ -61,19 +61,17 @@
         </div>
 
         <!-- Ubicación -->
+        <!-- Ubicación -->
         <div class="form-group mt-3">
             <label for="ubicacion_id">Ubicación</label>
             <div class="d-flex">
-                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion_container', 'btn_agregar_ubicacion')">
+                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion', 'btn_agregar_ubicacion')">
                     @foreach($ubicaciones as $ubicacion)
-                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->codigo }}</option>
+                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->codigo }} - Nivel {{ $ubicacion->nivel }}</option>
                     @endforeach
                     <option value="nueva">Agregar nuevo</option>
                 </select>
-                <div id="nueva_ubicacion_container" style="display:none;" class="d-flex gap-2 flex-grow-1">
-                    <input type="text" id="nueva_ubicacion_codigo" class="form-control" placeholder="Código" required>
-                    <input type="number" id="nueva_ubicacion_nivel" class="form-control" placeholder="Nivel" required>
-                </div>
+                <input type="text" name="nueva_ubicacion" id="nueva_ubicacion" class="form-control me-2" placeholder="Código - Nivel (ej: A1 - 2)" style="display:none;">
                 <button type="button" class="btn btn-outline-primary" id="btn_agregar_ubicacion" style="display:none;" onclick="agregarUbicacion()">Agregar</button>
             </div>
         </div>
