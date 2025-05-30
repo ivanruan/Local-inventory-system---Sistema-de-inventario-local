@@ -16,9 +16,19 @@ class CategoriaController extends Controller
 
     public function store(StoreCategoriaRequest $request)
     {
-        $categoria = Categoria::create($request->validated());
-
-        return response()->json($categoria, 201);
+        try {
+  	      $categoria = Categoria::create($request->validated());
+       		 return response()->json([
+            	'id' => $categoria->id,
+            	'nombre' => $categoria->nombre,
+            	'message' => 'Marca creada exitosamente'
+        	], 201);
+    	} catch (\Exception $e) {
+        	return response()->json([
+            	'message' => 'Error al crear la marca',
+            	'error' => $e->getMessage()
+        	], 500);
+    	}
     }
 
     public function show(Categoria $categoria)

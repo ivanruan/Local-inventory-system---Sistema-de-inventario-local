@@ -17,9 +17,19 @@ class UbicacionController extends Controller
 
     public function store(StoreUbicacionRequest $request)
     {
-        $ubicacion = Ubicacion::create($request->validated());
-
-        return response()->json($ubicacion, 201);
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'codigo' => 'required|string|max:255',
+            'nivel' => 'required|integer'
+        ]);
+        
+        $ubicacion = Ubicacion::create([
+            'nombre' => $request->nombre,
+            'codigo' => $request->codigo,
+            'nivel' => $request->nivel
+        ]);
+        
+        return response()->json($ubicacion);
     }
 
     public function show(Ubicacion $ubicacion)

@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\UbicacionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\AlertaStockController;
 use App\Http\Controllers\MovimientoInventarioController;
@@ -30,6 +32,8 @@ Route::get('/', function () {
 Route::resource('productos', ProductoController::class);
 
 Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
+Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+Route::post('/ubicaciones', [UbicacionController::class, 'store']);
 
 // Login
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

@@ -34,7 +34,7 @@
         <div class="form-group mt-3">
             <label for="marca_id">Marca</label>
             <div class="d-flex">
-                <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleMarcaInput(this)">
+                <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleInput('marca_id', 'nueva_marca', 'btn_agregar_marca')">
                     @foreach($marcas as $marca)
                         <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
                     @endforeach
@@ -45,19 +45,18 @@
             </div>
         </div>
 
-
         <!-- Categoría -->
         <div class="form-group mt-3">
             <label for="categoria_id">Categoría</label>
             <div class="d-flex">
-                <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleMarcaInput(this)">
-                    @foreach($marcas as $marca)
-                        <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
+                <select name="categoria_id" id="categoria_id" class="form-control me-2" onchange="toggleInput('categoria_id', 'nueva_categoria', 'btn_agregar_categoria')">
+                    @foreach($categorias as $categoria)
+                        <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
                     @endforeach
                     <option value="nueva">Agregar nuevo</option>
                 </select>
-                <input type="text" name="nueva_marca" id="nueva_marca" class="form-control me-2" placeholder="Nueva marca" style="display:none;">
-                <button type="button" class="btn btn-outline-primary" id="btn_agregar_marca" style="display:none;">Agregar</button>
+                <input type="text" name="nueva_categoria" id="nueva_categoria" class="form-control me-2" placeholder="Nueva categoría" style="display:none;">
+                <button type="button" class="btn btn-outline-primary" id="btn_agregar_categoria" style="display:none;" onclick="agregarCategoria()">Agregar</button>
             </div>
         </div>
 
@@ -65,13 +64,18 @@
         <div class="form-group mt-3">
             <label for="ubicacion_id">Ubicación</label>
             <div class="d-flex">
-                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2">
+                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion_container', 'btn_agregar_ubicacion')">
                     @foreach($ubicaciones as $ubicacion)
                         <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
                     @endforeach
+                    <option value="nueva">Agregar nuevo</option>
                 </select>
-                <input type="text" id="nueva_ubicacion" class="form-control me-2" placeholder="Nueva ubicación">
-                <button type="button" class="btn btn-outline-primary" onclick="agregarUbicacion()">Agregar</button>
+                <div id="nueva_ubicacion_container" style="display:none;" class="d-flex gap-2 flex-grow-1">
+                    <input type="text" id="nueva_ubicacion_nombre" class="form-control" placeholder="Nombre ubicación" required>
+                    <input type="text" id="nueva_ubicacion_codigo" class="form-control" placeholder="Código" required>
+                    <input type="number" id="nueva_ubicacion_nivel" class="form-control" placeholder="Nivel" required>
+                </div>
+                <button type="button" class="btn btn-outline-primary" id="btn_agregar_ubicacion" style="display:none;" onclick="agregarUbicacion()">Agregar</button>
             </div>
         </div>
 
@@ -138,6 +142,238 @@
 </div>
 
 <!-- JS para agregar nuevas opciones -->
-<script src="./create.js" ></script>
+<script>
+    // Add CSRF token to meta tag if not already present
+    if (!document.querySelector('meta[name="csrf-token"]')) {
+        const meta = document.createElement('meta');
+        meta.name = 'csrf-token';
+        meta.content = '{{ csrf_token() }}';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+
+    function toggleInput(selectId, inputId, buttonId) {
+        const select = document.getElementById(selectId);
+        const inputOrContainer = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+
+        if (!inputOrContainer || !button) return;
+
+        if (select.value === 'nueva') {
+            inputOrContainer.style.display = 'block';
+            button.style.display = 'block';
+            
+            // Focus on the first input field
+            if (selectId === 'ubicacion_id') {
+                document.getElementById('nueva_ubicacion_nombre').focus();
+            } else {
+                inputOrContainer.focus();
+            }
+        } else {
+            inputOrContainer.style.display = 'none';
+            button.style.display = 'none';
+            
+            // Clear input values
+            if (selectId === 'ubicacion_id') {
+                document.getElementById('nueva_ubicacion_nombre').value = '';
+                document.getElementById('nueva_ubicacion_codigo').value = '';
+                document.getElementById('nueva_ubicacion_nivel').value = '';
+            } else {
+                inputOrContainer.value = '';
+            }
+        }
+    }
+
+    // Specific functions for each type
+    function agregarMarca() {
+        agregarElemento('marca');
+    }
+
+    function agregarCategoria() {
+        agregarElemento('categoria');
+    }
+
+    function agregarUbicacion() {
+        const nombre = document.getElementById('nueva_ubicacion_nombre').value.trim();
+        const codigo = document.getElementById('nueva_ubicacion_codigo').value.trim();
+        const nivel = document.getElementById('nueva_ubicacion_nivel').value.trim();
+
+        if (!nombre || !codigo || !nivel) {
+            alert('Por favor completa todos los campos: nombre, código y nivel.');
+            return;
+        }
+
+        // Show loading state
+        const button = document.getElementById('btn_agregar_ubicacion');
+        const originalText = button.textContent;
+        button.textContent = 'Agregando...';
+        button.disabled = true;
+
+        fetch('/ubicaciones', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ 
+                nombre: nombre,
+                codigo: codigo,
+                nivel: parseInt(nivel)
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add new option to select
+            const select = document.getElementById('ubicacion_id');
+            
+            // Remove the "Agregar nuevo" option temporarily
+            const addNewOption = select.querySelector('option[value="nueva"]');
+            addNewOption.remove();
+            
+            // Add the new option
+            const newOption = new Option(data.nombre, data.id, true, true);
+            select.add(newOption);
+            
+            // Re-add the "Agregar nuevo" option at the end
+            select.add(addNewOption);
+            
+            // Hide inputs and button
+            document.getElementById('nueva_ubicacion_container').style.display = 'none';
+            button.style.display = 'none';
+            
+            // Clear input values
+            document.getElementById('nueva_ubicacion_nombre').value = '';
+            document.getElementById('nueva_ubicacion_codigo').value = '';
+            document.getElementById('nueva_ubicacion_nivel').value = '';
+
+            alert(`Ubicación "${data.nombre}" agregada exitosamente.`);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            let errorMessage = 'Error al agregar la ubicación.';
+            
+            if (error.errors) {
+                errorMessage += ' ' + Object.values(error.errors).flat().join(' ');
+            } else if (error.message) {
+                errorMessage += ' ' + error.message;
+            }
+            
+            alert(errorMessage);
+        })
+        .finally(() => {
+            // Reset button state
+            button.textContent = originalText;
+            button.disabled = false;
+        });
+    }
+
+    function agregarElemento(tipo) {
+        const input = document.getElementById(`nueva_${tipo}`);
+        const valor = input.value.trim();
+
+        if (!valor) {
+            alert(`Por favor ingresa un nombre para la ${tipo}.`);
+            input.focus();
+            return;
+        }
+
+        // Show loading state
+        const button = document.getElementById(`btn_agregar_${tipo}`);
+        const originalText = button.textContent;
+        button.textContent = 'Agregando...';
+        button.disabled = true;
+
+        // Determine the correct route
+        let route;
+        switch(tipo) {
+            case 'marca':
+                route = '/marcas';
+                break;
+            case 'categoria':
+                route = '/categorias';
+                break;
+            case 'ubicacion':
+                route = '/ubicaciones';
+                break;
+        }
+
+        fetch(route, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ nombre: valor })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add new option to select
+            const select = document.getElementById(`${tipo}_id`);
+            
+            // Remove the "Agregar nuevo" option temporarily
+            const addNewOption = select.querySelector('option[value="nueva"]');
+            addNewOption.remove();
+            
+            // Add the new option
+            const newOption = new Option(data.nombre, data.id, true, true);
+            select.add(newOption);
+            
+            // Re-add the "Agregar nuevo" option at the end
+            select.add(addNewOption);
+            
+            // Hide input and button
+            input.style.display = 'none';
+            button.style.display = 'none';
+            input.value = '';
+
+            alert(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} "${data.nombre}" agregada exitosamente.`);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            let errorMessage = 'Error al agregar la ' + tipo + '.';
+            
+            if (error.errors) {
+                errorMessage += ' ' + Object.values(error.errors).flat().join(' ');
+            } else if (error.message) {
+                errorMessage += ' ' + error.message;
+            }
+            
+            alert(errorMessage);
+        })
+        .finally(() => {
+            // Reset button state
+            button.textContent = originalText;
+            button.disabled = false;
+        });
+    }
+
+    // Allow Enter key to trigger the add function
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            if (e.target.matches('#nueva_marca, #nueva_categoria')) {
+                e.preventDefault();
+                const inputId = e.target.id;
+                const tipo = inputId.replace('nueva_', '');
+                
+                if (tipo === 'marca') agregarMarca();
+                else if (tipo === 'categoria') agregarCategoria();
+            } else if (e.target.matches('#nueva_ubicacion_nombre, #nueva_ubicacion_codigo, #nueva_ubicacion_nivel')) {
+                e.preventDefault();
+                agregarUbicacion();
+            }
+        }
+    });
+</script>
 @endsection
 
