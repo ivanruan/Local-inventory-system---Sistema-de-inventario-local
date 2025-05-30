@@ -66,12 +66,11 @@
             <div class="d-flex">
                 <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion_container', 'btn_agregar_ubicacion')">
                     @foreach($ubicaciones as $ubicacion)
-                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
+                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->codigo }}</option>
                     @endforeach
                     <option value="nueva">Agregar nuevo</option>
                 </select>
                 <div id="nueva_ubicacion_container" style="display:none;" class="d-flex gap-2 flex-grow-1">
-                    <input type="text" id="nueva_ubicacion_nombre" class="form-control" placeholder="Nombre ubicación" required>
                     <input type="text" id="nueva_ubicacion_codigo" class="form-control" placeholder="Código" required>
                     <input type="number" id="nueva_ubicacion_nivel" class="form-control" placeholder="Nivel" required>
                 </div>
@@ -80,15 +79,12 @@
         </div>
 
         <!-- Otros campos -->
-        <div class="row mt-3">
+        <div class="row mt-3">        
             <div class="col-md-4">
                 <label for="unidad">Unidad</label>
                 <input type="text" name="unidad" class="form-control" required>
             </div>
-            <div class="col-md-4">
-                <label for="nivel">Nivel</label>
-                <input type="number" name="nivel" class="form-control" required>
-            </div>
+            
             <div class="col-md-4">
                 <label for="stock_actual">Stock actual</label>
                 <input type="number" name="stock_actual" class="form-control" required>
@@ -164,7 +160,7 @@
             
             // Focus on the first input field
             if (selectId === 'ubicacion_id') {
-                document.getElementById('nueva_ubicacion_nombre').focus();
+                document.getElementById('nueva_ubicacion_codigo').focus();
             } else {
                 inputOrContainer.focus();
             }
@@ -174,7 +170,6 @@
             
             // Clear input values
             if (selectId === 'ubicacion_id') {
-                document.getElementById('nueva_ubicacion_nombre').value = '';
                 document.getElementById('nueva_ubicacion_codigo').value = '';
                 document.getElementById('nueva_ubicacion_nivel').value = '';
             } else {
@@ -193,12 +188,11 @@
     }
 
     function agregarUbicacion() {
-        const nombre = document.getElementById('nueva_ubicacion_nombre').value.trim();
         const codigo = document.getElementById('nueva_ubicacion_codigo').value.trim();
         const nivel = document.getElementById('nueva_ubicacion_nivel').value.trim();
 
-        if (!nombre || !codigo || !nivel) {
-            alert('Por favor completa todos los campos: nombre, código y nivel.');
+        if (!codigo || !nivel) {
+            alert('Por favor completa todos los campos: código y nivel.');
             return;
         }
 
@@ -216,7 +210,6 @@
                 "Accept": "application/json"
             },
             body: JSON.stringify({ 
-                nombre: nombre,
                 codigo: codigo,
                 nivel: parseInt(nivel)
             })
@@ -228,6 +221,12 @@
             return response.json();
         })
         .then(data => {
+            console.log('Response data:', data); // Debug line
+            
+            // Create display text from the data
+            const displayText = `${data.codigo} - Nivel ${data.nivel}`;
+            const itemId = data.id;
+            
             // Add new option to select
             const select = document.getElementById('ubicacion_id');
             
@@ -236,7 +235,7 @@
             addNewOption.remove();
             
             // Add the new option
-            const newOption = new Option(data.nombre, data.id, true, true);
+            const newOption = new Option(displayText, itemId, true, true);
             select.add(newOption);
             
             // Re-add the "Agregar nuevo" option at the end
@@ -247,11 +246,10 @@
             button.style.display = 'none';
             
             // Clear input values
-            document.getElementById('nueva_ubicacion_nombre').value = '';
             document.getElementById('nueva_ubicacion_codigo').value = '';
             document.getElementById('nueva_ubicacion_nivel').value = '';
 
-            alert(`Ubicación "${data.nombre}" agregada exitosamente.`);
+            alert(`Ubicación "${displayText}" agregada exitosamente.`);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -376,4 +374,3 @@
     });
 </script>
 @endsection
-
