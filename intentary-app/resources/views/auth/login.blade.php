@@ -16,16 +16,23 @@
                     </div>
                 @endif
 
+                {{-- Mostrar mensaje de éxito si viene de reset password --}}
+                @if (session('status'))
+                    <div class="alert alert-success">
+                        {{ session('status') }}
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
-                    {{-- Email --}}
+                    {{-- Nombre de usuario --}}
                     <div class="mb-3">
-                        <label for="email" class="form-label">Correo electrónico</label>
-                        <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror"
-                               value="{{ old('email') }}" required autofocus>
+                        <label for="nombre" class="form-label">Nombre de usuario</label>
+                        <input type="text" name="nombre" id="nombre" class="form-control @error('nombre') is-invalid @enderror"
+                               value="{{ old('nombre') }}" required autofocus autocomplete="username">
 
-                        @error('email')
+                        @error('nombre')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -34,7 +41,8 @@
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
                         <input type="password" name="password" id="password"
-                               class="form-control @error('password') is-invalid @enderror" required>
+                               class="form-control @error('password') is-invalid @enderror" 
+                               required autocomplete="current-password">
 
                         @error('password')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -52,10 +60,13 @@
                     </div>
                 </form>
 
-                {{-- Opcional: enlace de recuperación --}}
-                <div class="text-center mt-3">
-                    <a href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
-                </div>
+                {{-- Opcional: enlace de registro si tienes registro habilitado --}}
+                @if (Route::has('register'))
+                    <div class="text-center mt-3">
+                        <span class="text-muted">¿No tienes cuenta?</span>
+                        <a href="{{ route('register') }}" class="text-decoration-none">Regístrate aquí</a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

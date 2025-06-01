@@ -8,8 +8,11 @@ class StoreProductoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Aquí podrías usar políticas o roles, por ahora permitir a todos los operadores
-        return auth()->user()->rol !== 'operador' || auth()->user()->activo;
+        // At this point, we know user is authenticated (thanks to middleware)
+        $user = auth()->user();
+        
+        // Allow if user is not an operator, or if they are an active operator
+        return $user->rol !== 'operador' || $user->activo;
     }
 
     public function rules(): array

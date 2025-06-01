@@ -21,6 +21,12 @@ class ProductoController extends Controller
         return view('productos.index', compact('productos'));
     }
 
+    public function __construct()
+    {
+        $this->middleware('auth'); // This will automatically redirect to login
+    }
+
+
     /**
      * Formulario para crear un nuevo producto.
      */
@@ -39,21 +45,21 @@ class ProductoController extends Controller
      */
     public function store(StoreProductoRequest $request)
     {	
-	$data = $request->validated();
+        $data = $request->validated();
 
-    if ($data['marca_id'] === 'otra') {
-        $marca = Marca::create(['nombre' => $data['nueva_marca']]);
-        $data['marca_id'] = $marca->id;
-    }
+        if ($data['marca_id'] === 'otra') {
+            $marca = Marca::create(['nombre' => $data['nueva_marca']]);
+            $data['marca_id'] = $marca->id;
+        }
 
-    if ($data['categoria_id'] === 'otra') {
-        $categoria = Categoria::create(['nombre' => $data['nueva_categoria']]);
-        $data['categoria_id'] = $categoria->id;
-    }
+        if ($data['categoria_id'] === 'otra') {
+            $categoria = Categoria::create(['nombre' => $data['nueva_categoria']]);
+            $data['categoria_id'] = $categoria->id;
+        }
 
-    if ($data['ubicacion_id'] === 'otra') {
-        $ubicacion = Ubicacion::create(['nombre' => $data['nueva_ubicacion']]);
-        $data['ubicacion_id'] = $ubicacion->id;
+        if ($data['ubicacion_id'] === 'otra') {
+            $ubicacion = Ubicacion::create(['nombre' => $data['nueva_ubicacion']]);
+            $data['ubicacion_id'] = $ubicacion->id;
     }
 
     // Eliminar los campos auxiliares

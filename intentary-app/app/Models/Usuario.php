@@ -29,10 +29,49 @@ class Usuario extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'activo' => 'boolean',
-        'email_verified_at' => 'datetime',
-    ];
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'activo' => 'boolean',
+        ];
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'nombre';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->getAttribute('nombre');
+    }
+
+    /**
+     * Find the user instance for the given username.
+     */
+    public function findForPassport($username)
+    {
+        return $this->where('nombre', $username)->first();
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('activo', true);
+    }
 
     public function isAdmin(): bool
     {
