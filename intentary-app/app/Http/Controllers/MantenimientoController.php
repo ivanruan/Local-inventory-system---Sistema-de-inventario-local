@@ -2,71 +2,125 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Mantenimiento;
+use App\Models\Producto;
+use Illuminate\Http\Request;
 use App\Http\Requests\StoreMantenimientoRequest;
 use App\Http\Requests\UpdateMantenimientoRequest;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MantenimientoController extends Controller
 {
-	
     use ValidatesRequests;
 
-        public function index()
+    /**
+     * Muestra una lista de los mantenimientos.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function index(): \Illuminate\View\View
     {
-        $mantenimientos = Mantenimiento::with('producto')->get();
+        // CAMBIO CLAVE: Usa paginate() en lugar de get() para que $mantenimientos sea una instancia paginada.
+        // Carga los mantenimientos, incluyendo la relación con 'producto'
+        // Ordena por la fecha programada más reciente primero y los pagina (ej. 10 por página).
+        $mantenimientos = Mantenimiento::with('producto')
+                                     ->orderBy('fecha_programada', 'desc')
+                                     ->paginate(10); // Puedes ajustar el número de elementos por página aquí.
         return view('mantenimientos.index', compact('mantenimientos'));
     }
 
-    
-    public function store(StoreMantenimientoRequest $request)
+    /**
+     * Muestra el formulario para crear un nuevo mantenimiento.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create(): \Illuminate\View\View
+    {
+        $productos = Producto::orderBy('nombre')->get();
+        return view('mantenimientos.create', compact('productos'));
+    }
+
+    /**
+     * Almacena un nuevo mantenimiento en la base de datos.
+     *
+     * @param  \App\Http\Requests\StoreMantenimientoRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreMantenimientoRequest $request): \Illuminate\Http\RedirectResponse
     {
         try {
-            $mantenimiento = Mantenimiento::create($request->validated());
-            return response()->json($mantenimiento, 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTrace() : null
-            ], 500);
+            Mantenimiento::create($request->validated());
+            return redirect()->route('mantenimientos.index')
+                             ->with('success', 'Mantenimiento creado exitosamente.');
+        } catch (Throwable $e) {
+            Log::error("Error al crear mantenimiento: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->withInput()->withErrors(['error' => 'No se pudo crear el mantenimiento: ' . $e->getMessage()]);
         }
     }
 
-    public function show(Mantenimiento $mantenimiento): JsonResponse
+    /**
+     * Muestra el mantenimiento especificado.
+     *
+     * @param  \App\Models\Mantenimiento  $mantenimiento
+     * @return \Illuminate\View\View
+     */
+    public function show(Mantenimiento $mantenimiento): \Illuminate\View\View
     {
-        return response()->json($mantenimiento->load('producto'));
+        $mantenimiento->load('producto');
+        return view('mantenimientos.show', compact('mantenimiento'));
     }
 
-    public function update(UpdateMantenimientoRequest $request, Mantenimiento $mantenimiento): JsonResponse
+    /**
+     * Muestra el formulario para editar el mantenimiento especificado.
+     *
+     * @param  \App\Models\Mantenimiento  $mantenimiento
+     * @return \Illuminate\View\View
+     */
+    public function edit(Mantenimiento $mantenimiento): \Illuminate\View\View
     {
-        $mantenimiento->update($request->validated());
-        return response()->json($mantenimiento->fresh()->load('producto'));
+        $productos = Producto::orderBy('nombre')->get();
+        return view('mantenimientos.edit', compact('mantenimiento', 'productos'));
     }
 
-    public function destroy(Mantenimiento $mantenimiento): JsonResponse
+    /**
+     * Actualiza el mantenimiento especificado en la base de datos.
+     *
+     * @param  \App\Http\Requests\UpdateMantenimientoRequest  $request
+     * @param  \App\Models\Mantenimiento  $mantenimiento
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(UpdateMantenimientoRequest $request, Mantenimiento $mantenimiento): \Illuminate\Http\RedirectResponse
     {
-    try {
-        DB::transaction(function () use ($mantenimiento) {
-            $mantenimiento->delete();
-        });
-        
-        // Cambia esto:
-        return response()->json([], 204);
-        // En lugar de:
-        // return response()->noContent();
-        
-    } catch (\Exception $e) {
-        Log::error("Error eliminando mantenimiento: " . $e->getMessage());
-        return response()->json([
-            'message' => 'No se pudo eliminar el mantenimiento',
-            'error' => config('app.debug') ? $e->getMessage() : null
-        ], 500);
+        try {
+            $mantenimiento->update($request->validated());
+            return redirect()->route('mantenimientos.index')
+                             ->with('success', 'Mantenimiento actualizado exitosamente.');
+        } catch (Throwable $e) {
+            Log::error("Error al actualizar mantenimiento: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->withInput()->withErrors(['error' => 'No se pudo actualizar el mantenimiento: ' . $e->getMessage()]);
+        }
     }
-    return response()->noContent();
+
+    /**
+     * Elimina el mantenimiento especificado de la base de datos.
+     *
+     * @param  \App\Models\Mantenimiento  $mantenimiento
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy(Mantenimiento $mantenimiento): \Illuminate\Http\RedirectResponse
+    {
+        try {
+            DB::transaction(function () use ($mantenimiento) {
+                $mantenimiento->delete();
+            });
+            return redirect()->route('mantenimientos.index')
+                             ->with('success', 'Mantenimiento eliminado exitosamente.');
+        } catch (Throwable $e) {
+            Log::error("Error eliminando mantenimiento: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'No se pudo eliminar el mantenimiento: ' . $e->getMessage());
+        }
     }
 }
-

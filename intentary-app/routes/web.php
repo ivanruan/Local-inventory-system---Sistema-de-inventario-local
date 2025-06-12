@@ -47,18 +47,22 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->name('dashboard');
     
-    // Recursos principales
+    // Recursos principales (mantienen Route::resource si tienen CRUD completo)
     Route::resource('productos', ProductoController::class);
     Route::resource('movimientos', MovimientoInventarioController::class);
     Route::resource('mantenimientos', MantenimientoController::class);
     Route::resource('usuarios', UsuarioController::class);
-    Route::resource('alertas', AlertaStockController::class);
     
-    // Rutas adicionales específicas
+    // Rutas específicas para Alertas de Stock (ya que no es un CRUD completo)
+    // NOTA: Todos los nombres de ruta de alerta ahora usan el prefijo 'alertas.'
+    Route::get('/alertas', [AlertaStockController::class, 'index'])->name('alertas.index');
+    Route::get('/alertas/{alertaStock}', [AlertaStockController::class, 'show'])->name('alertas.show');
+    Route::patch('/alertas/{alertaStock}/resolver', [AlertaStockController::class, 'resolver'])->name('alertas.resolver');
+    
+    // Rutas adicionales específicas (mantienen las que ya tenías)
     Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
     Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
     Route::post('/ubicaciones', [UbicacionController::class, 'store']);
-    Route::patch('/alertas/{id}/resolver', [AlertaStockController::class, 'resolver'])->name('alertas.resolver');
     Route::post('/productos/preview-codigo', [ProductoController::class, 'previewCodigo'])
         ->name('productos.preview-codigo');
     
@@ -70,3 +74,5 @@ Route::middleware('auth')->group(function () {
 
 // Logout Route (para usuarios autenticados)
 Route::post('logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+

@@ -3,84 +3,55 @@
 namespace App\Http\Controllers;
 
 use App\Models\AlertaStock;
-use App\Models\Producto;
-use App\Http\Requests\StoreAlertaStockRequest;
-use App\Http\Requests\UpdateAlertaStockRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AlertaStockController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Muestra una lista de alertas de stock.
+     *
+     * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(): \Illuminate\View\View
     {
+        // CAMBIO CLAVE AQUÍ: Usamos paginate() para obtener una colección paginada.
         $alertas = AlertaStock::with('producto')
-            ->orderByDesc('fecha_generacion')
-            ->paginate(20);
-
+                              ->orderBy('fecha_generacion', 'desc')
+                              ->paginate(10); // Paginar 10 alertas por página
         return view('alertas.index', compact('alertas'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Muestra los detalles de una alerta de stock específica.
+     *
+     * @param  \App\Models\AlertaStock  $alertaStock
+     * @return \Illuminate\View\View
      */
-    public function create()
+    public function show(AlertaStock $alertaStock): \Illuminate\View\View
     {
-        return view('alertas.create', [
-            'productos' => Producto::all(),
-        ]);
+        $alertaStock->load('producto');
+        return view('alertas.show', compact('alertaStock'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Marca una alerta de stock como resuelta.
+     *
+     * @param  \App\Models\AlertaStock  $alertaStock
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(StoreAlertaStockRequest $request)
+    public function resolver(AlertaStock $alertaStock): \Illuminate\Http\RedirectResponse
     {
-        AlertaStock::create($request->validated());
+        try {
+            $alertaStock->marcarResuelta();
 
-        return redirect()->route('alertas.index')
-                         ->with('success', 'Alerta creada correctamente.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(AlertaStock $alerta)
-    {
-        return view('alertas.show', compact('alerta'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(AlertaStock $alerta)
-    {
-        return view('alertas.edit', [
-            'alerta'    => $alerta,
-            'productos' => Producto::all(),
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateAlertaStockRequest $request, AlertaStock $alerta)
-    {
-        $alerta->update($request->validated());
-
-        return redirect()->route('alertas.index')
-                         ->with('success', 'Alerta actualizada correctamente.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(AlertaStock $alerta)
-    {
-        $alerta->delete();
-
-        return redirect()->route('alertas.index')
-                         ->with('success', 'Alerta eliminada correctamente.');
+            return redirect()->route('alertas.index') // Usamos 'alertas.index'
+                             ->with('success', "Alerta #{$alertaStock->id} marcada como resuelta exitosamente.");
+        } catch (Throwable $e) {
+            Log::error("Error al resolver alerta #{$alertaStock->id}: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'No se pudo marcar la alerta como resuelta: ' . $e->getMessage());
+        }
     }
 }
+

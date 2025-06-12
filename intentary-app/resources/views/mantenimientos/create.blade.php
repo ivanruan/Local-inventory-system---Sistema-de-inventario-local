@@ -1,67 +1,141 @@
 @extends('layouts.app')
 
-@section('title', 'Nuevo Mantenimiento')
+@section('title', 'Crear Nuevo Mantenimiento')
 
 @section('content')
-    <h2>Registrar nuevo mantenimiento</h2>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm rounded-lg">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-lg">
+                        <h4 class="mb-0">Registrar Nuevo Mantenimiento</h4>
+                        <a href="{{ route('mantenimientos.index') }}" class="btn btn-light btn-sm">Volver a Mantenimientos</a>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="{{ route('mantenimientos.store') }}" method="POST" id="mantenimientoForm">
+                            @csrf
 
-    <form action="{{ route('mantenimientos.store') }}" method="POST">
-        @csrf
+                            {{-- Campo Producto --}}
+                            <div class="mb-3">
+                                <label for="producto_id" class="form-label fw-bold">Producto:</label>
+                                <select class="form-select form-select-lg rounded-pill @error('producto_id') is-invalid @enderror" id="producto_id" name="producto_id" required>
+                                    <option value="" disabled selected>Selecciona un producto</option>
+                                    @foreach ($productos as $producto)
+                                        <option value="{{ $producto->id }}" {{ old('producto_id') == $producto->id ? 'selected' : '' }}>
+                                            {{ $producto->nombre }} ({{ $producto->codigo }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('producto_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-        <div class="mb-3">
-            <label for="producto_id" class="form-label">Producto</label>
-            <select name="producto_id" class="form-select" required>
-                <option value="">Seleccione un producto</option>
-                @foreach ($productos as $producto)
-                    <option value="{{ $producto->id }}">{{ $producto->nombre }}</option>
-                @endforeach
-            </select>
+                            {{-- Campo Fecha Programada --}}
+                            <div class="mb-3">
+                                <label for="fecha_programada" class="form-label fw-bold">Fecha Programada:</label>
+                                <input type="datetime-local" class="form-control form-control-lg rounded-pill @error('fecha_programada') is-invalid @enderror" id="fecha_programada" name="fecha_programada" value="{{ old('fecha_programada', date('Y-m-d\TH:i')) }}" required>
+                                @error('fecha_programada')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Fecha Ejecución (opcional) --}}
+                            <div class="mb-3">
+                                <label for="fecha_ejecucion" class="form-label fw-bold">Fecha de Ejecución (Opcional):</label>
+                                <input type="datetime-local" class="form-control form-control-lg rounded-pill @error('fecha_ejecucion') is-invalid @enderror" id="fecha_ejecucion" name="fecha_ejecucion" value="{{ old('fecha_ejecucion') }}">
+                                @error('fecha_ejecucion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Tipo --}}
+                            <div class="mb-3">
+                                <label for="tipo" class="form-label fw-bold">Tipo de Mantenimiento:</label>
+                                <select class="form-select form-select-lg rounded-pill @error('tipo') is-invalid @enderror" id="tipo" name="tipo" required>
+                                    <option value="" disabled {{ old('tipo') ? '' : 'selected' }}>Selecciona un tipo</option>
+                                    <option value="preventivo" {{ old('tipo') == 'preventivo' ? 'selected' : '' }}>Preventivo</option>
+                                    <option value="correctivo" {{ old('tipo') == 'correctivo' ? 'selected' : '' }}>Correctivo</option>
+                                    <option value="predictivo" {{ old('tipo') == 'predictivo' ? 'selected' : '' }}>Predictivo</option>
+                                    <option value="limpieza" {{ old('tipo') == 'limpieza' ? 'selected' : '' }}>Limpieza</option>
+                                    <option value="rutinario" {{ old('tipo') == 'rutinario' ? 'selected' : '' }}>Rutinario</option>
+                                    <option value="emergencia" {{ old('tipo') == 'emergencia' ? 'selected' : '' }}>Emergencia</option>
+                                    {{-- Añade más tipos si es necesario y asegúrate de que coincidan con tus reglas de validación --}}
+                                </select>
+                                @error('tipo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Descripción --}}
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label fw-bold">Descripción:</label>
+                                <textarea class="form-control form-control-lg rounded @error('descripcion') is-invalid @enderror" id="descripcion" name="descripcion" rows="3" placeholder="Detalles del mantenimiento">{{ old('descripcion') }}</textarea>
+                                @error('descripcion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Responsable --}}
+                            <div class="mb-3">
+                                <label for="responsable" class="form-label fw-bold">Responsable:</label>
+                                <input type="text" class="form-control form-control-lg rounded-pill @error('responsable') is-invalid @enderror" id="responsable" name="responsable" value="{{ old('responsable') }}" placeholder="Nombre del responsable" required>
+                                @error('responsable')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Status --}}
+                            <div class="mb-3">
+                                <label for="status" class="form-label fw-bold">Estado:</label>
+                                <select class="form-select form-select-lg rounded-pill @error('status') is-invalid @enderror" id="status" name="status" required>
+                                    <option value="pendiente" {{ old('status', 'pendiente') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                    <option value="completado" {{ old('status') == 'completado' ? 'selected' : '' }}>Completado</option>
+                                    <option value="cancelado" {{ old('status') == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
+                                </select>
+                                @error('status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Costo --}}
+                            <div class="mb-3">
+                                <label for="costo" class="form-label fw-bold">Costo (Opcional):</label>
+                                <input type="number" step="0.01" class="form-control form-control-lg rounded-pill @error('costo') is-invalid @enderror" id="costo" name="costo" value="{{ old('costo') }}" placeholder="Ej: 150.75">
+                                @error('costo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campo Observaciones --}}
+                            <div class="mb-3">
+                                <label for="observaciones" class="form-label fw-bold">Observaciones (Opcional):</label>
+                                <textarea class="form-control form-control-lg rounded @error('observaciones') is-invalid @enderror" id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales">{{ old('observaciones') }}</textarea>
+                                @error('observaciones')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-success btn-lg rounded-pill px-4 me-md-2"
+                                        onclick="return confirm('¿Estás seguro de que deseas guardar este mantenimiento? Esta acción no se puede deshacer.')">
+                                    <i class="fas fa-save me-2"></i> Guardar Mantenimiento
+                                </button>
+                                <a href="{{ route('mantenimientos.index') }}" class="btn btn-secondary btn-lg rounded-pill px-4">
+                                    <i class="fas fa-times-circle me-2"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="mb-3">
-            <label for="tipo" class="form-label">Tipo de mantenimiento</label>
-            <select name="tipo" class="form-select" required>
-                <option value="preventivo">Preventivo</option>
-                <option value="correctivo">Correctivo</option>
-                <option value="limpieza">Limpieza</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="fecha_programada" class="form-label">Fecha programada</label>
-            <input type="datetime-local" name="fecha_programada" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-            <label for="descripcion" class="form-label">Descripción</label>
-            <textarea name="descripcion" class="form-control" rows="3"></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label for="responsable" class="form-label">Responsable</label>
-            <input type="text" name="responsable" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label for="status" class="form-label">Estado</label>
-            <select name="status" class="form-select" required>
-                <option value="pendiente">Pendiente</option>
-                <option value="completado">Completado</option>
-                <option value="cancelado">Cancelado</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="costo" class="form-label">Costo</label>
-            <input type="number" name="costo" class="form-control" step="0.01" min="0">
-        </div>
-
-        <div class="mb-3">
-            <label for="observaciones" class="form-label">Observaciones</label>
-            <textarea name="observaciones" class="form-control" rows="2"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-success">Guardar</button>
-        <a href="{{ route('mantenimientos.index') }}" class="btn btn-secondary">Cancelar</a>
-    </form>
+    </div>
 @endsection
+
+{{-- Opcional: Para iconos de Font Awesome --}}
+@push('scripts')
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+@endpush

@@ -17,7 +17,7 @@ class StoreMantenimientoRequest extends FormRequest
             'producto_id' => 'required|exists:productos,id',
             'fecha_programada' => 'required|date|after_or_equal:today',
             'fecha_ejecucion' => 'nullable|date|after_or_equal:fecha_programada',
-            'tipo' => 'required|in:preventivo,correctivo,limpieza',
+            'tipo' => 'required|in:preventivo,correctivo,predictivo,limpieza,rutinario,emergencia',
             'descripcion' => 'nullable|string',
             'responsable' => 'nullable|string|max:100',
             'status' => 'required|in:pendiente,completado,cancelado',
