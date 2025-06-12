@@ -16,9 +16,6 @@ use App\Http\Controllers\MovimientoInventarioController;
 use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\UsuarioController;
 
-
-
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -35,47 +32,41 @@ Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : redirect('/login');
 });
 
-Route::resource('productos', ProductoController::class);
-
-Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
-Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
-Route::post('/ubicaciones', [UbicacionController::class, 'store']);
-
-Route::resource('alertas', AlertaStockController::class);
-Route::patch('/alertas/{id}/resolver', [AlertaStockController::class, 'resolver'])->name('alertas.resolver');
-
-
-Route::resource('movimientos', MovimientoInventarioController::class);
-Route::resource('mantenimientos', MantenimientoController::class);
-Route::resource('usuarios', UsuarioController::class);
-
-
-Route::post('/productos/preview-codigo', [ProductoController::class, 'previewCodigo'])
-    ->name('productos.preview-codigo');
-
-// Login routes
+// Login routes (públicas)
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 
-// Register routes (if you want registration)
+// Register routes (públicas - si quieres registration)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
 
-// Protected routes
+// Protected routes - TODAS las rutas principales ahora están protegidas
 Route::middleware('auth')->group(function () {
+    // Dashboard
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
     
-    // Add your other protected routes here
-});
-
-// Logout Route (for authenticated users)
-Route::post('logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
-
-// Email Verification Routes (if using email verification)
-Route::middleware('auth')->group(function () {
+    // Recursos principales
+    Route::resource('productos', ProductoController::class);
+    Route::resource('movimientos', MovimientoInventarioController::class);
+    Route::resource('mantenimientos', MantenimientoController::class);
+    Route::resource('usuarios', UsuarioController::class);
+    Route::resource('alertas', AlertaStockController::class);
+    
+    // Rutas adicionales específicas
+    Route::post('/marcas', [MarcaController::class, 'store'])->name('marcas.store');
+    Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+    Route::post('/ubicaciones', [UbicacionController::class, 'store']);
+    Route::patch('/alertas/{id}/resolver', [AlertaStockController::class, 'resolver'])->name('alertas.resolver');
+    Route::post('/productos/preview-codigo', [ProductoController::class, 'previewCodigo'])
+        ->name('productos.preview-codigo');
+    
+    // Email Verification Routes (dentro del grupo auth)
     Route::get('email/verify', [VerificationController::class, 'show'])->name('verification.notice');
     Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
     Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 });
+
+// Logout Route (para usuarios autenticados)
+Route::post('logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');

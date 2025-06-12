@@ -41,21 +41,21 @@ class Usuario extends Authenticatable
         ];
     }
 
-    /**
-     * Get the name of the unique identifier for the user.
-     */
-    public function getAuthIdentifierName()
-    {
-        return 'nombre';
-    }
+        /**
+         * Get the name of the unique identifier for the user.
+         */
+    //public function getAuthIdentifierName()
+    //{
+    //    return 'nombre';
+    //}
 
-    /**
-     * Get the unique identifier for the user.
-     */
-    public function getAuthIdentifier()
-    {
-        return $this->getAttribute('nombre');
-    }
+        /**
+         * Get the unique identifier for the user.
+         */
+    //public function getAuthIdentifier()
+    //{
+    //    return $this->getAttribute('nombre');
+    //}
 
     /**
      * Find the user instance for the given username.

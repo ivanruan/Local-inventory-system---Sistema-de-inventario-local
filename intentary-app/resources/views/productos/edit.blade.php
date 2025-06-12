@@ -171,7 +171,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/productos/create.js') }}"></script>
+    <script src="{{ asset('js/productos/main.js') }}"></script>
     <script>
         // Inicializar el código al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

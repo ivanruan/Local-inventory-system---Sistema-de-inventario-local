@@ -156,5 +156,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/productos/create.js') }}"></script>
+    <script src="{{ asset('js/productos/main.js') }}"></script>
 @endpush

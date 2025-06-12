@@ -127,20 +127,27 @@ class MovimientoInventarioController extends Controller
     public function store(StoreMovimientoInventarioRequest $request)
     {
         $data = $request->validated();
-        
-        // Si no se proporciona fecha_hora, usar la actual
+
         if (!isset($data['fecha_hora'])) {
             $data['fecha_hora'] = now();
         }
 
-        // Agregar el usuario autenticado si no se especifica
-        if (!isset($data['usuario_id'])) {
+        if ($data['tipo'] === 'salida' && isset($data['usuario_destino']) && !empty($data['usuario_destino'])) {
+            $data['usuario_id'] = (int) $data['usuario_destino']; // Aseguramos que sea entero
+        } else {
             $data['usuario_id'] = auth()->id();
         }
 
+        unset($data['usuario_destino']);
+
+        // --- Puntos de verificación ---
+        \Log::info('Datos Finales para crear movimiento:', $data);
+        // O para depuración en el navegador:
+        // dd($data); // Esto detendrá la ejecución y mostrará el array $data
+        // --- Fin puntos de verificación ---
+
         $movimiento = MovimientoInventario::create($data);
 
-        // Actualizar el stock del producto
         $this->actualizarStock($movimiento);
 
         return redirect()->route('movimientos.index')
@@ -177,7 +184,15 @@ class MovimientoInventarioController extends Controller
     {
         $datosOriginales = $movimiento->toArray();
         
-        $movimiento->update($request->validated());
+        $data = $request->validated();
+        
+        // CORRECCIÓN: Mapear usuario_destino a usuario_id si existe
+        if (isset($data['usuario_destino'])) {
+            $data['usuario_id'] = $data['usuario_destino'];
+            unset($data['usuario_destino']);
+        }
+        
+        $movimiento->update($data);
 
         // Si cambió el producto, tipo o cantidad, actualizar stocks
         if ($datosOriginales['producto_id'] != $movimiento->producto_id ||
@@ -215,12 +230,14 @@ class MovimientoInventarioController extends Controller
     private function actualizarStock(MovimientoInventario $movimiento)
     {
         $producto = Producto::find($movimiento->producto_id);
-        
+
         if ($producto) {
             if ($movimiento->tipo === 'entrada') {
-                $producto->increment('stock', $movimiento->cantidad);
+                // Cambiar 'stock' a 'stock_actual'
+                $producto->increment('stock_actual', $movimiento->cantidad);
             } else {
-                $producto->decrement('stock', $movimiento->cantidad);
+                // Cambiar 'stock' a 'stock_actual'
+                $producto->decrement('stock_actual', $movimiento->cantidad);
             }
         }
     }
@@ -231,14 +248,15 @@ class MovimientoInventarioController extends Controller
     private function revertirStock(array $datosMovimiento)
     {
         $producto = Producto::find($datosMovimiento['producto_id']);
-        
+
         if ($producto) {
             if ($datosMovimiento['tipo'] === 'entrada') {
-                $producto->decrement('stock', $datosMovimiento['cantidad']);
+                // Cambiar 'stock' a 'stock_actual'
+                $producto->decrement('stock_actual', $datosMovimiento['cantidad']);
             } else {
-                $producto->increment('stock', $datosMovimiento['cantidad']);
+                // Cambiar 'stock' a 'stock_actual'
+                $producto->increment('stock_actual', $datosMovimiento['cantidad']);
             }
         }
     }
 }
-
