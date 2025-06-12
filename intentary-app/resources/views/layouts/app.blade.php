@@ -14,6 +14,9 @@
     {{-- Estilos personalizados --}}
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
+    {{--Nuestro logo en el tab--}}
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+
     @stack('styles')
 </head>
 <body class="d-flex flex-column min-vh-100">

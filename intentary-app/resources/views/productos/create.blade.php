@@ -15,19 +15,30 @@
 
         <div class="row">
             <div class="col-md-6">
-                <label for="codigo">Código</label>
-                <input type="text" name="codigo" class="form-control" required>
-            </div>
-
-            <div class="col-md-6">
                 <label for="nombre">Nombre</label>
-                <input type="text" name="nombre" class="form-control" required>
+                <input type="text" name="nombre" id="nombre" class="form-control" required onchange="generarCodigo()">
+            </div>
+            
+            <div class="col-md-6">
+                <label for="especificacion">Especificación</label>
+                <textarea name="especificacion" id="especificacion" class="form-control" onchange="generarCodigo()"></textarea>
             </div>
         </div>
 
+        <!-- Categoría -->
         <div class="form-group mt-3">
-            <label for="especificacion">Especificación</label>
-            <textarea name="especificacion" class="form-control"></textarea>
+            <label for="categoria_id">Categoría</label>
+            <div class="d-flex">
+                <select name="categoria_id" id="categoria_id" class="form-control me-2" onchange="toggleInput('categoria_id', 'nueva_categoria', 'btn_agregar_categoria'); generarCodigo()">
+                    <option value="">Seleccionar categoría</option>
+                    @foreach($categorias as $categoria)
+                        <option value="{{ $categoria->id }}" data-codigo="{{ $categoria->codigo ?? substr($categoria->nombre, 0, 3) }}">{{ $categoria->nombre }}</option>
+                    @endforeach
+                    <option value="nueva">Agregar nuevo</option>
+                </select>
+                <input type="text" name="nueva_categoria" id="nueva_categoria" class="form-control me-2" placeholder="Nueva categoría" style="display:none;">
+                <button type="button" class="btn btn-outline-primary" id="btn_agregar_categoria" style="display:none;" onclick="agregarCategoria()">Agregar</button>
+            </div>
         </div>
 
         <!-- Marca -->
@@ -35,6 +46,7 @@
             <label for="marca_id">Marca</label>
             <div class="d-flex">
                 <select name="marca_id" id="marca_id" class="form-control me-2" onchange="toggleInput('marca_id', 'nueva_marca', 'btn_agregar_marca')">
+                    <option value="">Seleccionar marca</option>
                     @foreach($marcas as $marca)
                         <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
                     @endforeach
@@ -45,29 +57,14 @@
             </div>
         </div>
 
-        <!-- Categoría -->
-        <div class="form-group mt-3">
-            <label for="categoria_id">Categoría</label>
-            <div class="d-flex">
-                <select name="categoria_id" id="categoria_id" class="form-control me-2" onchange="toggleInput('categoria_id', 'nueva_categoria', 'btn_agregar_categoria')">
-                    @foreach($categorias as $categoria)
-                        <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
-                    @endforeach
-                    <option value="nueva">Agregar nuevo</option>
-                </select>
-                <input type="text" name="nueva_categoria" id="nueva_categoria" class="form-control me-2" placeholder="Nueva categoría" style="display:none;">
-                <button type="button" class="btn btn-outline-primary" id="btn_agregar_categoria" style="display:none;" onclick="agregarCategoria()">Agregar</button>
-            </div>
-        </div>
-
-        <!-- Ubicación -->
         <!-- Ubicación -->
         <div class="form-group mt-3">
             <label for="ubicacion_id">Ubicación</label>
             <div class="d-flex">
-                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion', 'btn_agregar_ubicacion')">
+                <select name="ubicacion_id" id="ubicacion_id" class="form-control me-2" onchange="toggleInput('ubicacion_id', 'nueva_ubicacion', 'btn_agregar_ubicacion'); generarCodigo()">
+                    <option value="">Seleccionar ubicación</option>
                     @foreach($ubicaciones as $ubicacion)
-                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->codigo }} - Nivel {{ $ubicacion->nivel }}</option>
+                        <option value="{{ $ubicacion->id }}" data-codigo="{{ $ubicacion->codigo }}" data-nivel="{{ $ubicacion->nivel }}">{{ $ubicacion->codigo }} - Nivel {{ $ubicacion->nivel }}</option>
                     @endforeach
                     <option value="nueva">Agregar nuevo</option>
                 </select>
@@ -120,9 +117,11 @@
 
         <div class="form-group mt-3">
             <label for="status">Estado</label>
-            <select name="status" class="form-control">
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
+            <select name="status" class="form-control" required>
+                <option value="">Seleccionar estado</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Obsoleto">Obsoleto</option>
             </select>
         </div>
 
@@ -131,11 +130,88 @@
             <textarea name="observaciones" class="form-control"></textarea>
         </div>
 
+        <!-- Mostrar código generado al final del formulario -->
+        <div class="card mt-4" id="codigo_preview" style="display: none;">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Código del Producto Generado</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-0">
+                    <strong>Código:</strong> <span id="codigo_display" class="font-monospace fs-4"></span>
+                </div>
+                <small class="text-muted">
+                    Este código se genera automáticamente basado en: Categoría + 3 primeras letras del nombre + 4 primeras letras de la especificación + Código de ubicación + Nivel de ubicación + ID del producto
+                    <br><strong>Nota:</strong> El [ID] se asignará automáticamente cuando se guarde el producto.
+                </small>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-success mt-4">Guardar Producto</button>
+        
+        <!-- Campo de código generado (oculto para envío) -->
+        <input type="hidden" name="codigo" id="codigo_hidden">
     </form>
+
 </div>
 @endsection
 
 @push('scripts')
     <script src="{{ asset('js/productos/create.js') }}"></script>
+    <script>
+        function generarCodigo() {
+            // Obtener valores de los campos
+            const nombre = document.getElementById('nombre').value.trim();
+            const especificacion = document.getElementById('especificacion').value.trim();
+            
+            // Obtener categoría seleccionada
+            const categoriaSelect = document.getElementById('categoria_id');
+            const categoriaOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+            const categoriaCodigo = categoriaOption ? (categoriaOption.dataset.codigo || '') : '';
+            
+            // Obtener ubicación seleccionada
+            const ubicacionSelect = document.getElementById('ubicacion_id');
+            const ubicacionOption = ubicacionSelect.options[ubicacionSelect.selectedIndex];
+            const ubicacionCodigo = ubicacionOption ? (ubicacionOption.dataset.codigo || '') : '';
+            const ubicacionNivel = ubicacionOption ? (ubicacionOption.dataset.nivel || '') : '';
+            
+            // Generar partes del código (sin ID aún)
+            let codigoBase = '';
+            
+            if (categoriaCodigo) {
+                codigoBase += categoriaCodigo.toUpperCase();
+            }
+            
+            if (nombre) {
+                codigoBase += '-' + nombre.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+            }
+            
+            if (especificacion) {
+                codigoBase += especificacion.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+            }
+            
+            if (ubicacionCodigo && ubicacionNivel) {
+                codigoBase += '-' + ubicacionCodigo.toUpperCase() + ubicacionNivel;
+            }
+            
+            // El código final incluirá el ID después de guardar
+            const codigoPreview = codigoBase + '-[ID]';
+            
+            // Actualizar campos
+            document.getElementById('codigo_hidden').value = codigoBase; // Guardamos sin ID
+            document.getElementById('codigo_display').textContent = codigoPreview;
+            
+            // Mostrar/ocultar preview
+            const preview = document.getElementById('codigo_preview');
+            if (codigoBase.length > 0) {
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+        
+        // Generar código al cargar la página si hay datos
+        document.addEventListener('DOMContentLoaded', function() {
+            generarCodigo();
+        });
+    </script>
 @endpush

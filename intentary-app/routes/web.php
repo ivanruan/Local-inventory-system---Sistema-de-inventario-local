@@ -50,7 +50,8 @@ Route::resource('mantenimientos', MantenimientoController::class);
 Route::resource('usuarios', UsuarioController::class);
 
 
-
+Route::post('/productos/preview-codigo', [ProductoController::class, 'previewCodigo'])
+    ->name('productos.preview-codigo');
 
 // Login routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
