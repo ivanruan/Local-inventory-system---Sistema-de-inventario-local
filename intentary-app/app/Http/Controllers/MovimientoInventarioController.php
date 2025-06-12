@@ -10,19 +10,102 @@ use App\Models\Usuario;
 use App\Http\Requests\StoreMovimientoInventarioRequest;
 use App\Http\Requests\UpdateMovimientoInventarioRequest;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MovimientosExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MovimientoInventarioController extends Controller
 {
     /**
-     * Muestra la lista paginada de movimientos.
+     * Muestra la lista paginada de movimientos con filtros y estadísticas.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $movimientos = MovimientoInventario::with(['producto', 'proveedor', 'proyecto', 'usuario'])
-            ->orderByDesc('fecha_hora')
-            ->paginate(20);
+        // Obtener datos para los filtros PRIMERO
+        $productos = Producto::orderBy('nombre')->get();
+        
+        // Construir la consulta base
+        $query = MovimientoInventario::with(['producto', 'proveedor', 'proyecto', 'usuario']);
 
-        return view('movimientos.index', compact('movimientos'));
+        // Aplicar filtros
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+
+        if ($request->filled('producto_id')) {
+            $query->where('producto_id', $request->producto_id);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_hora', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_hora', '<=', $request->fecha_hasta);
+        }
+
+        // Aplicar ordenamiento
+        $sortField = $request->get('sort', 'fecha_hora');
+        $sortDirection = $request->get('direction', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+
+        // Verificar si es una exportación
+        if ($request->has('export')) {
+            return $this->exportData($request, $query);
+        }
+
+        // Paginar resultados
+        $movimientos = $query->paginate(20);
+
+        // Calcular estadísticas
+        $estadisticas = $this->calcularEstadisticas();
+
+        return view('movimientos.index', compact('movimientos', 'productos', 'estadisticas'));
+    }
+
+    /**
+     * Calcula las estadísticas para el dashboard.
+     */
+    private function calcularEstadisticas()
+    {
+        $hoy = Carbon::today();
+        $inicioMes = Carbon::now()->startOfMonth();
+        $finMes = Carbon::now()->endOfMonth();
+
+        return [
+            'entradas_hoy' => MovimientoInventario::where('tipo', 'entrada')
+                                ->whereDate('fecha_hora', $hoy)
+                                ->count(),
+            
+            'salidas_hoy' => MovimientoInventario::where('tipo', 'salida')
+                               ->whereDate('fecha_hora', $hoy)
+                               ->count(),
+            
+            'total_mes' => MovimientoInventario::whereBetween('fecha_hora', [$inicioMes, $finMes])
+                             ->count(),
+            
+            'productos_afectados' => MovimientoInventario::whereBetween('fecha_hora', [$inicioMes, $finMes])
+                                       ->distinct('producto_id')
+                                       ->count('producto_id'),
+        ];
+    }
+
+    /**
+     * Maneja la exportación de datos.
+     */
+    private function exportData(Request $request, $query)
+    {
+        $movimientos = $query->get();
+        
+        if ($request->export === 'excel') {
+            return Excel::download(new MovimientosExport($movimientos), 'movimientos_inventario.xlsx');
+        }
+        
+        if ($request->export === 'pdf') {
+            $pdf = Pdf::loadView('movimientos.pdf', compact('movimientos'));
+            return $pdf->download('movimientos_inventario.pdf');
+        }
     }
 
     /**
@@ -31,10 +114,10 @@ class MovimientoInventarioController extends Controller
     public function create()
     {
         return view('movimientos.create', [
-            'productos'  => Producto::all(),
-            'proveedores'=> Proveedor::all(),
-            'proyectos'  => Proyecto::all(),
-            'usuarios'   => Usuario::all(),
+            'productos'  => Producto::orderBy('nombre')->get(),
+            'proveedores'=> Proveedor::orderBy('nombre')->get(),
+            'proyectos'  => Proyecto::orderBy('nombre')->get(),
+            'usuarios'   => Usuario::orderBy('nombre')->get(),
         ]);
     }
 
@@ -43,7 +126,22 @@ class MovimientoInventarioController extends Controller
      */
     public function store(StoreMovimientoInventarioRequest $request)
     {
-        MovimientoInventario::create($request->validated());
+        $data = $request->validated();
+        
+        // Si no se proporciona fecha_hora, usar la actual
+        if (!isset($data['fecha_hora'])) {
+            $data['fecha_hora'] = now();
+        }
+
+        // Agregar el usuario autenticado si no se especifica
+        if (!isset($data['usuario_id'])) {
+            $data['usuario_id'] = auth()->id();
+        }
+
+        $movimiento = MovimientoInventario::create($data);
+
+        // Actualizar el stock del producto
+        $this->actualizarStock($movimiento);
 
         return redirect()->route('movimientos.index')
                          ->with('success', 'Movimiento registrado correctamente.');
@@ -54,6 +152,7 @@ class MovimientoInventarioController extends Controller
      */
     public function show(MovimientoInventario $movimiento)
     {
+        $movimiento->load(['producto', 'proveedor', 'proyecto', 'usuario']);
         return view('movimientos.show', compact('movimiento'));
     }
 
@@ -64,10 +163,10 @@ class MovimientoInventarioController extends Controller
     {
         return view('movimientos.edit', [
             'movimiento' => $movimiento,
-            'productos'  => Producto::all(),
-            'proveedores'=> Proveedor::all(),
-            'proyectos'  => Proyecto::all(),
-            'usuarios'   => Usuario::all(),
+            'productos'  => Producto::orderBy('nombre')->get(),
+            'proveedores'=> Proveedor::orderBy('nombre')->get(),
+            'proyectos'  => Proyecto::orderBy('nombre')->get(),
+            'usuarios'   => Usuario::orderBy('nombre')->get(),
         ]);
     }
 
@@ -76,7 +175,21 @@ class MovimientoInventarioController extends Controller
      */
     public function update(UpdateMovimientoInventarioRequest $request, MovimientoInventario $movimiento)
     {
+        $datosOriginales = $movimiento->toArray();
+        
         $movimiento->update($request->validated());
+
+        // Si cambió el producto, tipo o cantidad, actualizar stocks
+        if ($datosOriginales['producto_id'] != $movimiento->producto_id ||
+            $datosOriginales['tipo'] != $movimiento->tipo ||
+            $datosOriginales['cantidad'] != $movimiento->cantidad) {
+            
+            // Revertir el movimiento original
+            $this->revertirStock($datosOriginales);
+            
+            // Aplicar el nuevo movimiento
+            $this->actualizarStock($movimiento);
+        }
 
         return redirect()->route('movimientos.index')
                          ->with('success', 'Movimiento actualizado correctamente.');
@@ -87,10 +200,45 @@ class MovimientoInventarioController extends Controller
      */
     public function destroy(MovimientoInventario $movimiento)
     {
+        // Revertir el efecto en el stock antes de eliminar
+        $this->revertirStock($movimiento->toArray());
+        
         $movimiento->delete();
 
         return redirect()->route('movimientos.index')
                          ->with('success', 'Movimiento eliminado correctamente.');
+    }
+
+    /**
+     * Actualiza el stock del producto basado en el movimiento.
+     */
+    private function actualizarStock(MovimientoInventario $movimiento)
+    {
+        $producto = Producto::find($movimiento->producto_id);
+        
+        if ($producto) {
+            if ($movimiento->tipo === 'entrada') {
+                $producto->increment('stock', $movimiento->cantidad);
+            } else {
+                $producto->decrement('stock', $movimiento->cantidad);
+            }
+        }
+    }
+
+    /**
+     * Revierte el efecto de un movimiento en el stock.
+     */
+    private function revertirStock(array $datosMovimiento)
+    {
+        $producto = Producto::find($datosMovimiento['producto_id']);
+        
+        if ($producto) {
+            if ($datosMovimiento['tipo'] === 'entrada') {
+                $producto->decrement('stock', $datosMovimiento['cantidad']);
+            } else {
+                $producto->increment('stock', $datosMovimiento['cantidad']);
+            }
+        }
     }
 }
 
