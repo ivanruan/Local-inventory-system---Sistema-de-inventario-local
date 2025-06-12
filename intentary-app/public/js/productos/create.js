@@ -269,3 +269,59 @@ function agregarCategoria() {
 function agregarUbicacion() {
     window.productFormManager.agregarUbicacion();
 }
+
+function generarCodigo() {
+    // Obtener valores de los campos
+    const nombre = document.getElementById('nombre').value.trim();
+    const especificacion = document.getElementById('especificacion').value.trim();
+    
+    // Obtener categoría seleccionada
+    const categoriaSelect = document.getElementById('categoria_id');
+    const categoriaOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+    const categoriaCodigo = categoriaOption ? (categoriaOption.dataset.codigo || '') : '';
+    
+    // Obtener ubicación seleccionada
+    const ubicacionSelect = document.getElementById('ubicacion_id');
+    const ubicacionOption = ubicacionSelect.options[ubicacionSelect.selectedIndex];
+    const ubicacionCodigo = ubicacionOption ? (ubicacionOption.dataset.codigo || '') : '';
+    const ubicacionNivel = ubicacionOption ? (ubicacionOption.dataset.nivel || '') : '';
+    
+    // Generar partes del código (sin ID aún)
+    let codigoBase = '';
+    
+    if (categoriaCodigo) {
+        codigoBase += categoriaCodigo.toUpperCase();
+    }
+    
+    if (nombre) {
+        codigoBase += '-' + nombre.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+    
+    if (especificacion) {
+        codigoBase += especificacion.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+    
+    if (ubicacionCodigo && ubicacionNivel) {
+        codigoBase += '-' + ubicacionCodigo.toUpperCase() + ubicacionNivel;
+    }
+    
+    // El código final incluirá el ID después de guardar
+    const codigoPreview = codigoBase + '-[ID]';
+    
+    // Actualizar campos
+    document.getElementById('codigo_hidden').value = codigoBase; // Guardamos sin ID
+    document.getElementById('codigo_display').textContent = codigoPreview;
+    
+    // Mostrar/ocultar preview
+    const preview = document.getElementById('codigo_preview');
+    if (codigoBase.length > 0) {
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Generar código al cargar la página si hay datos
+document.addEventListener('DOMContentLoaded', function() {
+    generarCodigo();
+});

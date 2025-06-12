@@ -218,9 +218,9 @@ class ProductoController extends Controller
     {
         return view('productos.edit', [
             'producto'    => $producto,
-            'marcas'      => Marca::where('activo', true)->orderBy('nombre')->get(),
-            'categorias'  => Categoria::where('activo', true)->orderBy('nombre')->get(),
-            'ubicaciones' => Ubicacion::where('activo', true)->orderBy('codigo')->get(),
+            'marcas'      => Marca::orderBy('nombre')->get(),
+            'categorias'  => Categoria::orderBy('nombre')->get(),
+            'ubicaciones' => Ubicacion::orderBy('codigo')->get(),
         ]);
     }
 
