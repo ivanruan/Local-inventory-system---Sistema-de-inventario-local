@@ -1,48 +1,67 @@
-version: '3.8'
+# docker-compose.yml
+
+version: '3.8' # O la versión más reciente que soporte Docker Desktop
 
 services:
+  # Servicio de la aplicación PHP (Laravel)
   app:
     build:
-      context: .
+      context: ./docker/php # Busca el Dockerfile en esta ruta
       dockerfile: Dockerfile
-    image: inventario-app:latest
-    container_name: inventario-app
+    container_name: laravel_app # Nombre amigable para el contenedor
     restart: unless-stopped
-    working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - .:/var/www/html # Monta el directorio actual de tu proyecto en el contenedor
     ports:
-      - "8000:9000"
-    depends_on:
-      - db
-
-  db:
-    image: mysql:8.0
-    container_name: inventario-db
-    restart: unless-stopped
+      - "9000:9000" # Exponer el puerto de PHP-FPM (opcional, Nginx lo maneja internamente)
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: db_inventory
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: laravel
+      # Variables de entorno para Laravel que serán pasadas al contenedor
+      # Asegúrate de que estas coincidan con tu .env
+      DB_CONNECTION: mysql
+      DB_HOST: mysql # Nombre del servicio de MySQL en docker-compose.yml
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE} # Usará el valor de DB_DATABASE de tu .env local
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_KEY: ${APP_KEY} # Usará el valor de APP_KEY de tu .env local
+      APP_DEBUG: ${APP_DEBUG}
+      APP_ENV: ${APP_ENV}
+      APP_URL: ${APP_URL}
+    # User para ejecutar el servidor web (opcional, ayuda con permisos)
+    # user: "1000:1000" # Mapea al UID/GID que definiste en el Dockerfile si lo usaste
+
+  # Servicio del servidor web Nginx
+  nginx:
+    image: nginx:alpine # Imagen oficial de Nginx
+    container_name: laravel_nginx
+    restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "80:80"   # Mapea el puerto 80 del host al puerto 80 del contenedor
+      - "443:443" # Si planeas usar HTTPS, mapea el 443 también
     volumes:
-      - dbdata:/var/lib/mysql
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: inventario-pma
-    restart: unless-stopped
-    environment:
-      PMA_HOST: db
-      PMA_USER: root
-      PMA_PASSWORD: root
-    ports:
-      - "8080:80"
+      - .:/var/www/html        # Monta el proyecto para que Nginx pueda servirlo
+      - ./docker/nginx:/etc/nginx/conf.d # Monta el archivo de configuración de Nginx
     depends_on:
-      - db
+      - app # Nginx depende del servicio 'app' (PHP-FPM)
 
+  # Servicio de la base de datos MySQL
+  mysql:
+    image: mysql:8.0 # O la versión que prefieras (ej. mysql:5.7)
+    container_name: laravel_mysql
+    restart: unless-stopped
+    env_file: # Carga variables de entorno de tu .env para la DB
+      - ./.env
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # IMPORTANTE: En producción no uses la misma. O usa MYSQL_ALLOW_EMPTY_PASSWORD=yes para desarrollo.
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_TCP_PORT: ${DB_PORT}
+    volumes:
+      - dbdata:/var/lib/mysql # Persistencia de datos de la DB
+    ports:
+      - "3306:3306" # Mapea el puerto 3306 del host al puerto 3306 del contenedor (opcional, pero útil para clientes externos como TablePlus)
+
+# Volúmenes para persistir datos de la base de datos
 volumes:
   dbdata:
-
