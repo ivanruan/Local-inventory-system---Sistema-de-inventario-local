@@ -5,26 +5,16 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException; // Importa esta clase
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. This is a custom implementation.
-    |
-    */
-
     /**
      * Where to redirect users after login.
      *
      * @var string
      */
-    protected $redirectTo = '/dashboard'; // Change this to your desired redirect path
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -53,7 +43,9 @@ class LoginController extends Controller
      */
     public function username()
     {
-        return 'email';
+        // Define aquí el campo que Laravel debe usar como "username" para la autenticación.
+        // Como tu formulario usa 'nombre' y tu modelo lo usa, debe ser 'nombre'.
+        return 'nombre';
     }
 
     /**
@@ -61,31 +53,37 @@ class LoginController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
+     *
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function login(Request $request)
     {
+        // 1. Validar los datos de la solicitud
         $request->validate([
-            'nombre' => 'required|string',
+            $this->username() => 'required|string', // Usa $this->username() para coherencia
             'password' => 'required|string',
         ], [
-            'nombre.required' => 'El campo nombre es obligatorio.',
+            $this->username() . '.required' => 'El campo nombre de usuario es obligatorio.',
             'password.required' => 'El campo contraseña es obligatorio.',
         ]);
 
-        $credentials = $request->only('nombre', 'password');
-        
-        // Add active user condition
-        $credentials['activo'] = 1;
+        // 2. Preparar las credenciales
+        $credentials = $request->only($this->username(), 'password');
+        $credentials['activo'] = 1; // Asegúrate de que el usuario esté activo
 
+        // 3. Intentar autenticar al usuario
         if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
+            // Si la autenticación es exitosa
+            $request->session()->regenerate(); // Regenerar la sesión para prevenir fijación de sesión
 
-            return redirect()->intended('/dashboard'); // Change this to your desired redirect
+            return redirect()->intended($this->redirectPath()); // Redirigir a la URL intencionada o al dashboard
         }
 
+        // 4. Si la autenticación falla, lanzar una excepción de validación.
+        // Laravel capturará esto y redirigirá de vuelta con los errores y los old inputs.
         throw ValidationException::withMessages([
-            'nombre' => ['Las credenciales proporcionadas no coinciden con nuestros registros.'],
-        ]);
+            $this->username() => [trans('Autenticacion fallida')], // Usa trans('auth.failed') para el mensaje estándar de Laravel
+        ])->redirectTo(route('login')); // Redirigir explícitamente a la ruta de login para mayor seguridad.
     }
 
     /**
@@ -101,6 +99,7 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        // Puedes redirigir a la página de inicio o a la de login con un mensaje de éxito.
         return redirect('/')->with('success', 'Sesión cerrada correctamente.');
     }
 

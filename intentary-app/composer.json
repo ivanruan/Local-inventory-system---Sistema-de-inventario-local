@@ -9,6 +9,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "beyondcode/laravel-er-diagram-generator": "^4.0",
         "guzzlehttp/guzzle": "^7.2",
+        "laravel-lang/lang": "^15.2",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
