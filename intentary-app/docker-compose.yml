@@ -29,6 +29,9 @@ services:
       APP_URL: ${APP_URL}
     # User para ejecutar el servidor web (opcional, ayuda con permisos)
     # user: "1000:1000" # Mapea al UID/GID que definiste en el Dockerfile si lo usaste
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   # Servicio del servidor web Nginx
   nginx:
@@ -36,7 +39,7 @@ services:
     container_name: laravel_nginx
     restart: unless-stopped
     ports:
-      - "80:80"   # Mapea el puerto 80 del host al puerto 80 del contenedor
+      - "8000:8000"   # Mapea el puerto 80 del host al puerto 80 del contenedor
       - "443:443" # Si planeas usar HTTPS, mapea el 443 también
     volumes:
       - .:/var/www/html        # Monta el proyecto para que Nginx pueda servirlo
@@ -61,6 +64,12 @@ services:
       - dbdata:/var/lib/mysql # Persistencia de datos de la DB
     ports:
       - "3306:3306" # Mapea el puerto 3306 del host al puerto 3306 del contenedor (opcional, pero útil para clientes externos como TablePlus)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+      start_period: 30s
 
 # Volúmenes para persistir datos de la base de datos
 volumes:

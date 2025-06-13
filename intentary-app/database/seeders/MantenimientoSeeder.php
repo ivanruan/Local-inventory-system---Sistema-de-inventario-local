@@ -13,6 +13,6 @@ class MantenimientoSeeder extends Seeder
      */
     public function run(): void
     {
-        Mantenimiento::factory()->count(10)->create();        //
+        Mantenimiento::factory()->count(2)->create();        //
     }
 }

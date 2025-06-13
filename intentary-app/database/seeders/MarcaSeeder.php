@@ -10,7 +10,7 @@ class MarcaSeeder extends Seeder
 {
     public function run(): void
     {
-        Marca::factory()->count(10)->create();
+        Marca::factory()->count(2)->create();
 
         // Algunas marcas fijas de ejemplo
         $marcas = ['Sony', 'Samsung', 'HP', 'Lenovo', 'Logitech'];

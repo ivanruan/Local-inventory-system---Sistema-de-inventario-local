@@ -12,6 +12,6 @@ class AdjuntoSeeder extends Seeder
      */
     public function run(): void
     {
-        Adjunto::factory()->count(50)->create();
+        Adjunto::factory()->count(2)->create();
     }
 }

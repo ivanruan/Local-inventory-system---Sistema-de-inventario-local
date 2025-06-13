@@ -12,6 +12,6 @@ class AutorizacionSeeder extends Seeder
      */
     public function run(): void
     {
-	AlertaStock::factory()->count(100)->create();        //
+	AlertaStock::factory()->count(2)->create();        //
     }
 }
