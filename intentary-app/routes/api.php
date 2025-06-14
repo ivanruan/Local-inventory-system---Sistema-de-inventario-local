@@ -27,18 +27,18 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 // Grupo de rutas protegidas por autenticación
-Route::middleware('auth:sanctum')->group(function() {
-    Route::apiResource('marcas', MarcaController::class)->except(['index']);
-    Route::apiResource('proveedores', ProveedorController::class);
-    Route::apiResource('categorias', CategoriaController::class);
-    Route::apiResource('proyectos', ProyectoController::class);
+//Route::middleware('auth:sanctum')->group(function() {
+ //   Route::apiResource('marcas', MarcaController::class)->except(['index']);
+//    Route::apiResource('proveedores', ProveedorController::class);
+//    Route::apiResource('categorias', CategoriaController::class);
+   // Route::apiResource('proyectos', ProyectoController::class);
 //    Route::apiResource('mantenimientos', MantenimientoController::class);
-    Route::apiResource('ubicaciones', UbicacionController::class);
+ //   Route::apiResource('ubicaciones', UbicacionController::class);
     //Route::apiResource('usuarios', UsuarioController::class);
-});
+//});
 
 //Route::apiResource('marcas', MarcaController::class)->except(['index']);
-Route::get('/marcas', [MarcaController::class, 'index']); // Public path
+//Route::get('/marcas', [MarcaController::class, 'index']); // Public path
 //
 Route::put('/debug/ubicaciones/{id}', function(Request $request, $id) {
     $ubicacion = Ubicacion::find($id);
