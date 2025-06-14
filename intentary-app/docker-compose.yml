@@ -1,7 +1,5 @@
 # docker-compose.yml
 
-version: '3.8' # O la versión más reciente que soporte Docker Desktop
-
 services:
   # Servicio de la aplicación PHP (Laravel)
   app:
@@ -39,7 +37,7 @@ services:
     container_name: laravel_nginx
     restart: unless-stopped
     ports:
-      - "8000:8000"   # Mapea el puerto 80 del host al puerto 80 del contenedor
+      - "8000:80"   # Mapea el puerto 80 del host al puerto 80 del contenedor
       - "443:443" # Si planeas usar HTTPS, mapea el 443 también
     volumes:
       - .:/var/www/html        # Monta el proyecto para que Nginx pueda servirlo

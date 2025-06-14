@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     git \
     zip \
     unzip \
+    libzip4 \
+    libzip-dev \
+    pkg-config \
     libpng-dev \
     libjpeg-dev \
     libwebp-dev \
@@ -41,6 +44,10 @@ RUN docker-php-ext-install -j1 pcntl
 RUN docker-php-ext-install -j1 xml
 RUN docker-php-ext-install -j1 gmp
 RUN docker-php-ext-install -j1 bcmath
+
+# Configurar e instalar ZIP (requiere configuración especial)
+RUN docker-php-ext-configure zip
+RUN docker-php-ext-install -j1 zip
 
 # NOTA: tokenizer ya viene habilitado por defecto en PHP 8.3-fpm
 # No es necesario instalarlo manualmente
