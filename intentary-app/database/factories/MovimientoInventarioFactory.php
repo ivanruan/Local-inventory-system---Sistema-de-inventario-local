@@ -31,8 +31,8 @@ class MovimientoInventarioFactory extends Factory
             'proyecto_id'          => $this->faker->optional()->randomElement(Proyecto::pluck('id')->toArray()),
             'usuario_id'           => Usuario::factory(),
             'tiempo_uso_acumulado' => $this->faker->randomFloat(2, 0, 50),
-            'documento_ingreso'    => $this->faker->optional()->bothify('DOC-#####') . '.pdf',
-            'motivo_salida'        => $this->faker->optional()->sentence(),
+            'documento_soporte'    => $this->faker->optional()->bothify('DOC-#####') . '.pdf',
+            'motivo'        => $this->faker->optional()->sentence(),
             'procedimiento_disposicion' => $this->faker->optional()->paragraph(),
             'observaciones'        => $this->faker->optional()->text(),
         ];

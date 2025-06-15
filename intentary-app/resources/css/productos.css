@@ -1,0 +1,129 @@
+/* Estilos generales y utilidades */
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 0.375rem; /* Combinado de ambos bloques */
+    overflow: hidden; /* Combinado de ambos bloques */
+}
+
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+.badge {
+    font-size: 0.7em;
+    padding: 0.35em 0.65em;
+}
+
+/* Estilos de tabla */
+.table th,
+.table td {
+    font-size: 0.85rem;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-top: none;
+}
+
+.table tbody tr {
+    transition: all 0.15s ease-in-out;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.025);
+}
+
+.table-sm td,
+.table-sm th {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.row-number {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+/* Estilos de botones */
+.btn-group-sm > .btn, /* Selectores combinados para mayor especificidad */
+.btn-group-sm .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.4rem; /* Valor original del primer bloque */
+}
+
+/* Ajuste específico para el segundo bloque de .btn-group-sm .btn si necesita un padding diferente */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem; /* Sobrescribe el padding si es necesario */
+}
+
+/* Estilos de componentes específicos */
+#bulkActionBar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+#filtrosPanel {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Mejoras para responsive */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .table-responsive {
+        font-size: 0.75rem;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.625rem;
+    }
+}
