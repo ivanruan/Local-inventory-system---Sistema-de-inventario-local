@@ -53,6 +53,7 @@
                 </div>
             </div>
 
+            <!--
             <div class="col-md-10 col-lg-8 mb-3">
                 <div class="card text-white bg-info module-card"
                      data-image="{{ asset('img/mantenimientos.avif') }}"
@@ -67,6 +68,7 @@
                     </div>
                 </div>
             </div>
+            -->
 
             <div class="col-md-10 col-lg-8 mb-3">
                 <div class="card text-white bg-dark module-card"
@@ -83,6 +85,7 @@
                 </div>
             </div>
 
+            <!--
             <div class="col-md-10 col-lg-8 mb-3">
                 <div class="card text-white bg-warning module-card"
                      data-image="{{ asset('img/alertas.avif') }}"
@@ -97,7 +100,7 @@
                     </div>
                 </div>
             </div>
-
+            -->
 
         </div>
     </div>
