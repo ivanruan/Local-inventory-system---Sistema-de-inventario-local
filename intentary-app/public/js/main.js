@@ -1,5 +1,12 @@
 // main.js - Integración completa de ProductManager con todos los módulos
 document.addEventListener('DOMContentLoaded', () => {
+    
+         // Verificar que FormHelpers esté disponible
+    if (typeof FormHelpers === 'undefined') {
+        console.error('FormHelpers no está definido!');
+        return;
+    }
+    
     // Instanciar el núcleo
     const core = new ProductManagerCore();
 
