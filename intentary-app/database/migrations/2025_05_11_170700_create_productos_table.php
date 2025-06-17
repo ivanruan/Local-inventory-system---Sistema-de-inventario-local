@@ -58,18 +58,14 @@ return new class extends Migration
 
             // Estado con enum ampliado
             $table->enum('status', [
-                'Activo',
-                'Inactivo', 
-                'Obsoleto',
                 'Stock Optimo',
                 'Stock Bajo',
                 'Fuera de Stock',
-                'Sobre Stock',
-                'En Reorden'
-            ])->default('Activo');
+                'Sobre Stock'
+            ])->default('Fuera de Stock');
 
             // Costos y vida útil
-            $table->decimal('costo', 10, 2)->default(0.00);
+            $table->decimal('valor_unitario', 20, 2)->default(0.00);
             $table->integer('vida_util')->nullable()
                   ->comment('Vida útil en días');
 

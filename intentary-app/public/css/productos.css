@@ -1,9 +1,9 @@
 /* Estilos generales y utilidades */
 .table-responsive {
     max-height: 70vh;
-    overflow-y: auto;
-    border-radius: 0.375rem; /* Combinado de ambos bloques */
-    overflow: hidden; /* Combinado de ambos bloques */
+    overflow-y: auto; /* Mantiene el scroll vertical automático */
+    border-radius: 0.375rem;
+    overflow: auto; /* CAMBIO CLAVE: Permite scroll horizontal y vertical automático */
 }
 
 .sticky-top {
@@ -41,17 +41,11 @@
 .table th,
 .table td {
     font-size: 0.85rem;
+    vertical-align: middle;
 }
 
 .table th {
     white-space: nowrap;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-.table thead th {
     position: sticky;
     top: 0;
     z-index: 10;
@@ -78,15 +72,10 @@
 }
 
 /* Estilos de botones */
-.btn-group-sm > .btn, /* Selectores combinados para mayor especificidad */
+.btn-group-sm > .btn,
 .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
-    padding: 0.25rem 0.4rem; /* Valor original del primer bloque */
-}
-
-/* Ajuste específico para el segundo bloque de .btn-group-sm .btn si necesita un padding diferente */
-.btn-group-sm .btn {
-    padding: 0.25rem 0.5rem; /* Sobrescribe el padding si es necesario */
 }
 
 /* Estilos de componentes específicos */

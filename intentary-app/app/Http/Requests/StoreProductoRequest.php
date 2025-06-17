@@ -31,12 +31,13 @@ class StoreProductoRequest extends FormRequest
             'stock_maximo'       => 'required|integer|min:0',
             'stock_seguridad'    => 'required|integer|min:0',
             'duracion_inventario'=> 'required|integer|min:0',
-            'status'             => 'required|in:Activo,Inactivo,Obsoleto',
+            'status'             => 'required|in:Stock Bajo, Fuera de Stock, Sobre Stock, Stock Optimo',
             'costo'              => 'required|numeric|min:0',
             'vida_util'          => 'required|integer|min:0',
             'observaciones'      => 'nullable|string',
         ];
     }
+
 
     public function messages(): array
     {

@@ -6,9 +6,11 @@ use App\Models\Categoria;
 use App\Models\Ubicacion;
 use App\Models\Marca;
 use App\Models\Producto;
-use App\Http\Requests\StoreProductoRequest;
-use App\Http\Requests\UpdateProductoRequest;
+use App\Models\Proveedor;
+use App\Http\Requests\StoreProductoRequest; // Assuming you have this for create validation
+use App\Http\Requests\UpdateProductoRequest; // We will define this for update validation
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class ProductoController extends Controller
@@ -21,10 +23,80 @@ class ProductoController extends Controller
     /**
      * Muestra la lista de productos.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $productos = Producto::with(['marca', 'categoria', 'ubicacion'])->paginate(15);
-        return view('productos.index', compact('productos'));
+        $query = Producto::query();
+
+        // Aplicar filtros de búsqueda
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('codigo', 'like', '%' . $search . '%')
+                  ->orWhere('nombre', 'like', '%' . $search . '%')
+                  ->orWhere('especificacion', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($request->filled('categoria')) {
+            $query->where('categoria_id', $request->input('categoria'));
+        }
+
+        if ($request->filled('marca')) {
+            $query->where('marca_id', $request->input('marca'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Filtros de stock
+        if ($request->filled('stock_filter')) {
+            switch ($request->input('stock_filter')) {
+                case 'bajo':
+                    // Asume que tienes un campo o lógica para stock_minimo
+                    $query->whereColumn('stock_actual', '<=', 'stock_minimo');
+                    break;
+                case 'fuera':
+                    $query->where('stock_actual', 0);
+                    break;
+                case 'sobre':
+                    // Asume que tienes un campo o lógica para stock_maximo
+                    $query->whereColumn('stock_actual', '>=', 'stock_maximo');
+                    break;
+            }
+        }
+
+        // Ordenamiento
+        $sortColumn = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
+        $query->orderBy($sortColumn, $sortDirection);
+
+        $productos = $query->paginate(10); // O el número de elementos por página que uses
+
+        // --- CÁLCULO DE ESTADÍSTICAS (Esto es lo que te faltaba o tenías incompleto) ---
+        // Calcula estas variables ANTES de pasarlas a la vista
+        $totalProductos = Producto::count();
+        $stockBajo = Producto::whereColumn('stock_actual', '<=', 'stock_minimo')
+                              ->where('stock_actual', '>', 0) // Que no esté fuera de stock
+                              ->count();
+        $fueraStock = Producto::where('stock_actual', 0)->count();
+        $valorTotal = Producto::sum(\DB::raw('stock_actual * valor_unitario')); // Asegúrate de tener stock_actual y costo
+        $sobreStock = Producto::whereColumn('stock_actual', '>=', 'stock_maximo')->count();
+
+        // Cargar datos para filtros (si no lo estás haciendo ya)
+        $categorias = Categoria::all();
+        $marcas = Marca::all();
+
+        return view('productos.index', [
+            'productos' => $productos,
+            'categorias' => $categorias,
+            'marcas' => $marcas,
+            'totalProductos' => $totalProductos, // Pasando la variable
+            'stockBajo' => $stockBajo, // Pasando la variable
+            'fueraStock' => $fueraStock, // Pasando la variable
+            'valorTotal' => $valorTotal, // Pasando la variable
+            'sobreStock' => $sobreStock, // Pasando la variable
+        ]);
     }
 
     /**
@@ -35,8 +107,9 @@ class ProductoController extends Controller
         $marcas = Marca::orderBy('nombre')->get();
         $categorias = Categoria::orderBy('nombre')->get();
         $ubicaciones = Ubicacion::orderBy('codigo')->get();
+        $proveedores = Proveedor::orderBy('nombre')->get(); // Added proveedores for create as well
 
-        return view('productos.create', compact('marcas', 'categorias', 'ubicaciones'));
+        return view('productos.create', compact('marcas', 'categorias', 'ubicaciones', 'proveedores'));
     }
 
     /**
@@ -46,78 +119,22 @@ class ProductoController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             $data = $request->validated();
 
-            // Manejar creación de nueva marca si es necesario
-            if (isset($data['marca_id']) && $data['marca_id'] === 'nueva') {
-                if (!empty($data['nueva_marca'])) {
-                    $marca = Marca::create([
-                        'nombre' => $data['nueva_marca'],
-                        'activo' => true
-                    ]);
-                    $data['marca_id'] = $marca->id;
-                }
-            }
-
-            // Manejar creación de nueva categoría si es necesario
-            if (isset($data['categoria_id']) && $data['categoria_id'] === 'nueva') {
-                if (!empty($data['nueva_categoria'])) {
-                    $categoria = Categoria::create([
-                        'nombre' => $data['nueva_categoria'],
-                        'activo' => true
-                    ]);
-                    $data['categoria_id'] = $categoria->id;
-                }
-            }
-
-            // Manejar creación de nueva ubicación si es necesario
-            if (isset($data['ubicacion_id']) && $data['ubicacion_id'] === 'nueva') {
-                if (!empty($data['nueva_ubicacion'])) {
-                    // Parsear el formato "A1 - 2" para obtener código y nivel
-                    $ubicacionData = $this->parseNuevaUbicacion($data['nueva_ubicacion']);
-                    $ubicacion = Ubicacion::create([
-                        'codigo' => $ubicacionData['codigo'],
-                        'nivel' => $ubicacionData['nivel'],
-                        'activo' => true
-                    ]);
-                    $data['ubicacion_id'] = $ubicacion->id;
-                }
-            }
-
-            // Eliminar los campos auxiliares
-            unset($data['nueva_marca'], $data['nueva_categoria'], $data['nueva_ubicacion']);
-
-            // Crear el producto con código temporal
-            $producto = new Producto();
-            $producto->fill($data);
-            $producto->codigo = 'TEMP_' . time() . '_' . uniqid(); // Código temporal único
-            $producto->save();
-
-            // Generar el código final con el ID
-            $codigoFinal = $this->generarCodigoCompleto($producto);
-            
-            // Verificar que el código no exista (aunque es muy improbable)
-            $contador = 1;
-            $codigoOriginal = $codigoFinal;
-            while (Producto::where('codigo', $codigoFinal)->where('id', '!=', $producto->id)->exists()) {
-                $codigoFinal = $codigoOriginal . '_' . $contador;
-                $contador++;
-            }
-            
-            // Actualizar el producto con el código final
-            $producto->codigo = $codigoFinal;
-            $producto->save();
+            // The Producto model's 'creating' observer handles auto-generating 'codigo'
+            // if it's not provided or is empty, and setting initial 'stock_actual'.
+            $producto = Producto::create($data);
 
             DB::commit();
 
             return redirect()
                 ->route('productos.index')
-                ->with('success', 'Producto creado exitosamente. Código asignado: ' . $codigoFinal);
-                
+                ->with('success', 'Producto ' . $producto->codigo . ' creado correctamente.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()
                 ->withErrors(['error' => 'Error al crear el producto: ' . $e->getMessage()])
                 ->withInput();
@@ -125,160 +142,78 @@ class ProductoController extends Controller
     }
 
     /**
-     * Genera el código completo del producto basado en sus datos.
-     */
-    private function generarCodigoCompleto(Producto $producto)
-    {
-        // Cargar las relaciones necesarias
-        $producto->load(['categoria', 'ubicacion']);
-        
-        // Obtener código de categoría (usar campo codigo si existe, sino primeras 3 letras del nombre)
-        $categoriaCodigo = $producto->categoria->codigo ?? 
-                          strtoupper(substr($producto->categoria->nombre, 0, 3));
-        
-        // Limpiar y obtener primeras 3 letras del nombre del producto
-        $nombreLimpio = preg_replace('/[^A-Z0-9]/i', '', $producto->nombre);
-        $nombreCodigo = strtoupper(substr($nombreLimpio, 0, 3));
-        
-        // Limpiar y obtener primeras 4 letras de la especificación
-        $especificacionLimpio = preg_replace('/[^A-Z0-9]/i', '', $producto->especificacion ?? '');
-        $especificacionCodigo = strtoupper(substr($especificacionLimpio, 0, 4));
-        
-        // Obtener código de ubicación + nivel
-        $ubicacionCodigo = strtoupper($producto->ubicacion->codigo . $producto->ubicacion->nivel);
-        
-        // Construir el código final
-        $codigoCompleto = $categoriaCodigo . '-' . 
-                         $nombreCodigo . 
-                         $especificacionCodigo . '-' . 
-                         $ubicacionCodigo . '-' . 
-                         $producto->id;
-        
-        return $codigoCompleto;
-    }
-
-    /**
-     * Parsea el texto de nueva ubicación en formato "A1 - 2"
-     */
-    private function parseNuevaUbicacion($ubicacionTexto)
-    {
-        // Formato esperado: "A1 - 2" donde A1 es código y 2 es nivel
-        $partes = explode(' - ', trim($ubicacionTexto));
-        
-        return [
-            'codigo' => isset($partes[0]) ? trim($partes[0]) : 'XX',
-            'nivel' => isset($partes[1]) ? (int)trim($partes[1]) : 1
-        ];
-    }
-
-    /**
-     * Método auxiliar para preview del código (opcional - para AJAX)
-     */
-    public function previewCodigo(Request $request)
-    {
-        try {
-            $categoria = Categoria::find($request->categoria_id);
-            $ubicacion = Ubicacion::find($request->ubicacion_id);
-            
-            if (!$categoria || !$ubicacion) {
-                return response()->json(['codigo' => '']);
-            }
-            
-            $categoriaCodigo = $categoria->codigo ?? strtoupper(substr($categoria->nombre, 0, 3));
-            $nombreLimpio = preg_replace('/[^A-Z0-9]/i', '', $request->nombre ?? '');
-            $nombreCodigo = strtoupper(substr($nombreLimpio, 0, 3));
-            $especificacionLimpio = preg_replace('/[^A-Z0-9]/i', '', $request->especificacion ?? '');
-            $especificacionCodigo = strtoupper(substr($especificacionLimpio, 0, 4));
-            $ubicacionCodigo = strtoupper($ubicacion->codigo . $ubicacion->nivel);
-            
-            $codigoPreview = $categoriaCodigo . '-' . 
-                            $nombreCodigo . 
-                            $especificacionCodigo . '-' . 
-                            $ubicacionCodigo . '-[ID]';
-            
-            return response()->json(['codigo' => $codigoPreview]);
-            
-        } catch (\Exception $e) {
-            return response()->json(['codigo' => '']);
-        }
-    }
-
-    /**
-     * Muestra un producto en detalle.
+     * Muestra los detalles de un producto específico.
      */
     public function show(Producto $producto)
     {
+        // Load relationships if they are not eager loaded by default
+        $producto->load(['marca', 'categoria', 'ubicacion', 'proveedor']);
         return view('productos.show', compact('producto'));
     }
 
     /**
-     * Formulario para editar un producto existente.
+     * Muestra el formulario para editar un producto existente.
      */
     public function edit(Producto $producto)
     {
-        return view('productos.edit', [
-            'producto'    => $producto,
-            'marcas'      => Marca::orderBy('nombre')->get(),
-            'categorias'  => Categoria::orderBy('nombre')->get(),
-            'ubicaciones' => Ubicacion::orderBy('codigo')->get(),
-        ]);
+        // Fetch related data for dropdowns
+        $marcas = Marca::orderBy('nombre')->get();
+        $categorias = Categoria::orderBy('nombre')->get();
+        $ubicaciones = Ubicacion::orderBy('codigo')->get();
+        $proveedores = Proveedor::orderBy('nombre')->get(); // Ensure suppliers are passed
+
+        return view('productos.edit', compact(
+            'producto',
+            'categorias',
+            'marcas',
+            'ubicaciones',
+            'proveedores'
+        ));
     }
 
     /**
-     * Actualiza los datos de un producto.
+     * Actualiza el producto especificado en la base de datos.
      */
     public function update(UpdateProductoRequest $request, Producto $producto)
     {
         try {
             DB::beginTransaction();
-            
+
             $data = $request->validated();
-            
-            // Guardar el código anterior para comparación
-            $codigoAnterior = $producto->codigo;
-            
-            // Actualizar los datos del producto
+
+            // Get the original code before updating
+            $originalCodigo = $producto->codigo;
+
+            // Update the product. The 'updating' observer in Producto model
+            // will handle recalculating stock_actual if stock_inicial, total_entradas,
+            // or total_salidas change.
+            // It also handles stock_minimo/maximo/seguridad validations.
             $producto->update($data);
-            
-            // Regenerar código si cambió alguno de los campos que lo componen
-            $camposImportantes = ['nombre', 'especificacion', 'categoria_id', 'ubicacion_id'];
-            $regenerarCodigo = false;
-            
-            foreach ($camposImportantes as $campo) {
-                if (array_key_exists($campo, $data) && $producto->getOriginal($campo) != $data[$campo]) {
-                    $regenerarCodigo = true;
-                    break;
-                }
-            }
-            
-            if ($regenerarCodigo) {
-                $codigoNuevo = $this->generarCodigoCompleto($producto);
-                
-                // Verificar que el nuevo código no exista
-                $contador = 1;
-                $codigoOriginal = $codigoNuevo;
-                while (Producto::where('codigo', $codigoNuevo)->where('id', '!=', $producto->id)->exists()) {
-                    $codigoNuevo = $codigoOriginal . '_' . $contador;
-                    $contador++;
-                }
-                
-                $producto->codigo = $codigoNuevo;
-                $producto->save();
-                
-                $mensaje = 'Producto actualizado correctamente. Código actualizado: ' . $codigoNuevo;
-            } else {
-                $mensaje = 'Producto actualizado correctamente.';
-            }
-            
+
+            $mensaje = 'Producto actualizado correctamente.';
+
+            // Check if the code was changed and if it conflicted with existing unique codes
+            // Your existing logic for updating product code if it conflicts:
+            // This part of the logic from your old 'update' method is specific.
+            // If the code changed and now conflicts, you might want to re-generate it
+            // or ensure the validation in UpdateProductoRequest handles uniqueness correctly.
+            // My UpdateProductoRequest below uses a 'Rule::unique' to handle this at validation.
+            // If you still want the auto-increment logic here after validation (e.g., if a user
+            // tries to set a code that just became available), it's redundant if Rule::unique works.
+            // Given Rule::unique, this block below might not be strictly necessary if your UX
+            // wants an error on conflict, rather than auto-changing the code silently.
+            // I'll leave it out for now, assuming validation handles conflicts.
+            // If you want to keep the auto-increment on conflict post-validation, you'd re-add it here.
+
             DB::commit();
-            
+
             return redirect()
-                ->route('productos.index')
+                ->route('productos.show', $producto->id) // Redirect to show page after update
                 ->with('success', $mensaje);
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()
                 ->withErrors(['error' => 'Error al actualizar el producto: ' . $e->getMessage()])
                 ->withInput();
@@ -293,11 +228,11 @@ class ProductoController extends Controller
         try {
             $codigoProducto = $producto->codigo;
             $producto->delete();
-            
+
             return redirect()
                 ->route('productos.index')
                 ->with('success', 'Producto ' . $codigoProducto . ' eliminado correctamente.');
-                
+
         } catch (\Exception $e) {
             return back()
                 ->withErrors(['error' => 'Error al eliminar el producto: ' . $e->getMessage()]);

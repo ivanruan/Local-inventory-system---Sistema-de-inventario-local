@@ -22,12 +22,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property int      $total_entradas
  * @property int      $total_salidas
  * @property int|null $stock_minimo
- * @property int      $stock_actual
+ * @property int|null $stock_actual
  * @property int|null $stock_maximo
  * @property int|null $stock_seguridad
  * @property int|null $duracion_inventario
  * @property string   $status
- * @property float    $costo
+ * @property float    $valor_unitario
  * @property int|null $vida_util
  * @property string|null $observaciones
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -64,7 +64,7 @@ class Producto extends Model
         'stock_seguridad',
         'duracion_inventario',
         'status',
-        'costo',
+        'valor_unitario',
         'vida_util',
         'observaciones',
     ];
@@ -89,7 +89,7 @@ class Producto extends Model
         'stock_seguridad'     => 'integer',
         'duracion_inventario' => 'integer',
         'vida_util'           => 'integer',
-        'costo'               => 'decimal:2',
+        'valor_unitario'      => 'decimal:2',
         'created_at'          => 'datetime',
         'updated_at'          => 'datetime',
         'status'              => 'string',
@@ -106,21 +106,17 @@ class Producto extends Model
         'total_entradas' => 0,
         'total_salidas' => 0,
         'stock_actual' => 0,
-        'costo' => 0.00,
-        'status' => 'Activo',
+        'valor_unitario' => 0.00,
+        'status' => 'Fuera de Stock',
     ];
 
     /**
      * Constantes para los estados del producto.
      */
-    public const STATUS_ACTIVO = 'Activo';
-    public const STATUS_INACTIVO = 'Inactivo';
-    public const STATUS_OBSOLETO = 'Obsoleto';
     public const STATUS_STOCK_OPTIMO = 'Stock Optimo';
     public const STATUS_STOCK_BAJO = 'Stock Bajo';
     public const STATUS_FUERA_STOCK = 'Fuera de Stock';
     public const STATUS_SOBRE_STOCK = 'Sobre Stock';
-    public const STATUS_EN_REORDEN = 'En Reorden';
 
     /**
      * Obtiene todos los estados posibles.
@@ -129,16 +125,30 @@ class Producto extends Model
      */
     public static function getStatusOptions(): array
     {
-        return [
-            self::STATUS_ACTIVO,
-            self::STATUS_INACTIVO,
-            self::STATUS_OBSOLETO,
+        return [   
             self::STATUS_STOCK_OPTIMO,
             self::STATUS_STOCK_BAJO,
             self::STATUS_FUERA_STOCK,
-            self::STATUS_SOBRE_STOCK,
-            self::STATUS_EN_REORDEN,
+            self::STATUS_SOBRE_STOCK
         ];
+    }
+
+     /**
+     * Get the Bootstrap color class for a given status.
+     *
+     * @param string $status
+     * @return string
+     */
+    public static function getStatusColor(string $status): string
+    {
+        return [
+            
+            self::STATUS_STOCK_OPTIMO => 'success',
+            self::STATUS_STOCK_BAJO => 'warning',
+            self::STATUS_FUERA_STOCK => 'danger',
+            self::STATUS_SOBRE_STOCK => 'info'
+            
+        ][$status] ?? 'primary'; // Default color if status not found
     }
 
     /**
@@ -195,14 +205,6 @@ class Producto extends Model
     public function mantenimientos()
     {
         return $this->hasMany(Mantenimiento::class);
-    }
-
-    /**
-     * Scopes para consultas frecuentes.
-     */
-    public function scopeActivos($query)
-    {
-        return $query->where('status', self::STATUS_ACTIVO);
     }
 
     public function scopeConStockBajo($query)

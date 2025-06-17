@@ -36,8 +36,8 @@ class ProductoFactory extends Factory
             'stock_maximo'       => $this->faker->numberBetween(101, 200),
             'stock_seguridad'    => $this->faker->numberBetween(1, 20),
             'duracion_inventario'=> $this->faker->numberBetween(10, 365),
-            'status'             => $this->faker->randomElement(['Activo', 'Inactivo']),
-            'costo'              => $this->faker->randomFloat(2, 1, 1000),
+            'status'             => $this->faker->randomElement(['Stock Optimo', 'Fuera de Stock']),
+            'valor_unitario'              => $this->faker->randomFloat(2, 1, 1000),
             'vida_util'          => $this->faker->numberBetween(30, 1095),
             'observaciones'      => $this->faker->optional()->paragraph(),
         ];
