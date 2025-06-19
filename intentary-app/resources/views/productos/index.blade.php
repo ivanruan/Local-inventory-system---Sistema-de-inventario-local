@@ -92,101 +92,86 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // SOLUCIÓN INMEDIATA: Vincular el evento del botón de filtros directamente
+    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+    const filtrosPanel = document.getElementById('filtrosPanel');
+    
+    if (toggleFiltersBtn && filtrosPanel) {
+        toggleFiltersBtn.addEventListener('click', () => {
+            console.log('Toggle filters button clicked'); // Para debugging
+            if (filtrosPanel.style.display === 'none' || filtrosPanel.style.display === '') {
+                filtrosPanel.style.display = 'block';
+            } else {
+                filtrosPanel.style.display = 'none';
+            }
+        });
+    } else {
+        console.error('Toggle button or filters panel not found');
+    }
+
+    // RESTO DE LA LÓGICA DEL PRODUCT MANAGER
     // Inicializar ProductManagerCore
     const productManagerCore = window.productManager;
 
-    // Registrar módulos. Asegúrate de que los constructores de tus módulos
-    // puedan aceptar el core o tener un método setCore si lo necesitan.
-    // También asegúrate de que tus módulos tienen un método initialize()
-    // si tienen lógica que debe ejecutarse al ser registrados.
-    productManagerCore.registerModule('eventHandlers', new ProductEventHandlers(productManagerCore));
-    productManagerCore.registerModule('tableFeatures', new ProductTableFeatures(productManagerCore));
-    productManagerCore.registerModule('stockManagement', new ProductStockManagement(productManagerCore));
-    productManagerCore.registerModule('bulkOperations', new ProductBulkOperations(productManagerCore));
-    productManagerCore.registerModule('formHelpers', new FormHelpers(productManagerCore));
+    if (productManagerCore) {
+        // Registrar módulos solo si productManagerCore existe
+        try {
+            productManagerCore.registerModule('eventHandlers', new ProductEventHandlers(productManagerCore));
+            productManagerCore.registerModule('tableFeatures', new ProductTableFeatures(productManagerCore));
+            productManagerCore.registerModule('stockManagement', new ProductStockManagement(productManagerCore));
+            productManagerCore.registerModule('bulkOperations', new ProductBulkOperations(productManagerCore));
+            productManagerCore.registerModule('formHelpers', new FormHelpers(productManagerCore));
+        } catch (error) {
+            console.error('Error registering modules:', error);
+        }
+    } else {
+        console.warn('ProductManager not available');
+    }
 
-
-    // Función que inicializa las características adicionales después de que productManager y sus módulos estén listos
+    // Función que inicializa las características adicionales
     function initProductManagerFeatures() {
         console.log('initProductManagerFeatures called. ProductManager is ready.');
 
-        // Vinculación de eventos que no son manejados por los módulos registrados automáticamente
-        // Ej: Toggle del panel de filtros (esto estaba en tu index.blade.php original)
-        document.getElementById('toggleFiltersBtn')?.addEventListener('click', () => {
-            const panel = document.getElementById('filtrosPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // La lógica de vinculación de paginación y otros eventos delegados
-        // debería estar en ProductEventHandlers o ProductTableFeatures.
-        // Asegúrate de que esos módulos tienen métodos que se llaman
-        // después de que el DOM de la tabla se actualiza.
-        // ProductTableFeatures.initializeTableFeatures() ya se llama en renderProductData
-        // de ProductManagerCore, lo cual es correcto para re-bindear.
-        // Asegúrate que ProductEventHandlers también tenga un método para re-bindear
-        // eventos de navegación/paginación si los elementos de paginación son reemplazados.
-        // Si no tienes lógica de navegación de paginación en ProductEventHandlers,
-        // podrías agregarla aquí, o en product-event-handlers.js en un método como bindNavigationEvents().
-        // La paginación de Laravel ya usa links, y al ser inyectados, los eventos de click
-        // pueden ser capturados por un listener delegado si se implementa.
-        // Por ahora, asumimos que ProductEventHandlers.bindNavigationEvents() ya lo maneja
-        // y se llama en su initialize(). Si los enlaces de paginación son reemplazados,
-        // este método debería llamarse de nuevo después de la actualización AJAX.
-
-        // Listener global para clics de paginación para manejarlo vía AJAX
-        // Esto es un ejemplo de cómo podrías delegar eventos para la paginación.
-        // Este listener debe estar fuera de `initProductManagerFeatures` o ser robusto
-        // para no duplicarse.
+        // Listener global para clics de paginación
         document.addEventListener('click', (e) => {
             const paginationLink = e.target.closest('.pagination a');
             if (paginationLink && paginationLink.href) {
-                e.preventDefault(); // Prevenir la recarga de la página
+                e.preventDefault();
                 const url = new URL(paginationLink.href);
-                // Obtener solo los parámetros de la URL del enlace de paginación
                 const params = Object.fromEntries(new URLSearchParams(url.search).entries());
-
-                // Fusionar con los filtros actuales para mantenerlos al cambiar de página
-                const currentFilters = window.productManager.state.filters;
-                window.productManager.updateURL({ ...currentFilters, ...params });
+                
+                if (window.productManager && window.productManager.state) {
+                    const currentFilters = window.productManager.state.filters;
+                    window.productManager.updateURL({ ...currentFilters, ...params });
+                }
             }
         });
 
-
-        // Sincronizar el formulario de filtros con la URL al cargar la página
-        // Esto es útil si el usuario llega con una URL con filtros o usa el botón de atrás/adelante.
-        productManagerCore.syncFilterFormWithURL();
+        // Sincronizar filtros con URL
+        if (productManagerCore && productManagerCore.syncFilterFormWithURL) {
+            productManagerCore.syncFilterFormWithURL();
+        }
     }
 
-    // Esperar a que ProductManager esté completamente inicializado
-    // `window.productManager` se define en product-manager-core.js.
-    // La propiedad `isInitialized` de ProductManagerCore debería ser `true`
-    // después de que todos los módulos se hayan registrado.
+    // Inicializar features si ProductManager está listo
     if (window.productManager && window.productManager.isInitialized) {
         initProductManagerFeatures();
-    } else {
-        // Fallback: Si por alguna razón productManager no está listo,
-        // usar el observador para esperar a que `isInitialized` sea true.
-        const observer = new MutationObserver((mutationsList, observer) => {
+    } else if (window.productManager) {
+        // Esperar a que se inicialice
+        setTimeout(() => {
             if (window.productManager && window.productManager.isInitialized) {
-                observer.disconnect();
                 initProductManagerFeatures();
             }
-        });
-        // Observa cambios en el body (donde se añaden elementos o scripts pueden cargarse)
-        observer.observe(document.body, { childList: true, subtree: true });
+        }, 100);
     }
 });
 
-// Listener para el evento popstate (botones atrás/adelante del navegador)
-// Esto debe estar fuera de DOMContentLoaded si se espera que los listeners
-// de nivel superior persistan a través de actualizaciones AJAX.
+// Listener para el evento popstate
 window.addEventListener('popstate', (event) => {
     console.log('Popstate event triggered:', event.state);
-    if (window.productManager) {
-        // El estado del historial guardado es nulo si el usuario navegó a una página externa
-        // o si es la entrada inicial. Si hay un estado, úsalo.
-        const newState = event.state || {}; // Si event.state es null, usa un objeto vacío para limpiar filtros
-        window.productManager.updateURL(newState, false); // false para reemplazar el estado, no crear uno nuevo
+    if (window.productManager && window.productManager.updateURL) {
+        const newState = event.state || {};
+        window.productManager.updateURL(newState, false);
     }
 });
 </script>
