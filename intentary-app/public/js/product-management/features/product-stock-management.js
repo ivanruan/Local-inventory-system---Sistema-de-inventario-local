@@ -522,3 +522,5 @@ class ProductStockManagement {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProductStockManagement;
 }
+
+window.ProductStockManagement = ProductStockManagement;

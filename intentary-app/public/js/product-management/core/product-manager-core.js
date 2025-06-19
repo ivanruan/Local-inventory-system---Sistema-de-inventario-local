@@ -4,25 +4,31 @@ class ProductManagerCore {
         this.modules = new Map();
         this.state = {
             selectedProducts: new Set(),
-            filters: {},
+            filters: {}, // Aquí guardaremos los filtros activos
             sortConfig: null,
             lastAction: null,
             isLoading: false,
             bulkOperationInProgress: false
         };
-        
+
         this.config = {
             debounceDelay: 500,
             requestTimeout: 30000,
             maxRetries: 3,
             toastDuration: 3000,
             animationDuration: 300,
-            // Configuraciones específicas para bulk operations
             bulk: {
                 confirmationRequired: true,
                 autoRefresh: true,
                 showProgress: true,
                 maxSelectionWarning: 1000
+            },
+            // Nueva configuración: selectores para las partes de la página a actualizar
+            selectors: {
+                productTableContainer: '#product-table-container', // Contenedor de la tabla (ej: div que envuelve _product_table)
+                productStatsContainer: '#product-stats-container', // Contenedor de estadísticas (ej: div que envuelve _product_stats)
+                paginationContainer: '.pagination-container', // Contenedor de la paginación
+                mainContentArea: '#main-content-area' // Contenedor principal para recargar, si aplica
             }
         };
 
@@ -103,31 +109,26 @@ class ProductManagerCore {
     }
 
     // === GESTIÓN DE MÓDULOS MEJORADA ===
+    /**
+     * Registra un módulo y lo inicializa.
+     * @param {string} name
+     * @param {object} moduleInstance
+     */
     registerModule(name, moduleInstance) {
-        // Verificar que el módulo tenga la estructura correcta
-        if (!moduleInstance || typeof moduleInstance.initialize !== 'function') {
-            console.warn(`Module ${name} doesn't have required initialize method`);
+        if (this.modules.has(name)) {
+            console.warn(`Module "${name}" already registered.`);
+            return;
         }
-
-        // Inyectar referencia del core en el módulo
-        if (moduleInstance && typeof moduleInstance === 'object') {
-            moduleInstance.core = this;
-        }
-
         this.modules.set(name, moduleInstance);
-        console.debug(`Module registered: ${name}`);
-        
-        // Auto-inicializar si el core ya está listo
-        if (this.isReady() && typeof moduleInstance.initialize === 'function') {
-            try {
-                moduleInstance.initialize();
-                console.debug(`Module auto-initialized: ${name}`);
-            } catch (error) {
-                console.error(`Failed to auto-initialize module ${name}:`, error);
-            }
+        // Pasa una referencia al core si el módulo la necesita para interacción
+        if (typeof moduleInstance.setCore === 'function') {
+            moduleInstance.setCore(this);
         }
-
-        return this;
+        // Si el módulo tiene un método initialize, llamarlo
+        if (typeof moduleInstance.initialize === 'function') {
+            moduleInstance.initialize();
+        }
+        console.debug(`Module registered: ${name}`);
     }
 
     getModule(name) {
@@ -158,30 +159,6 @@ class ProductManagerCore {
     }
 
     // === MÉTODOS DELEGADOS MEJORADOS PARA BULK OPERATIONS ===
-    async bulkUpdateStatus() {
-        const bulkOperations = this.getModule('bulkOperations');
-        if (!bulkOperations) {
-            this.showNotification('error', 'Módulo de operaciones masivas no disponible');
-            return;
-        }
-
-        if (!this.validateBulkOperation('update')) return;
-
-        try {
-            this.dispatchBulkEvent('bulkOperationStarted', { 
-                type: 'statusUpdate', 
-                count: this.getSelectedIds().length 
-            });
-            
-            await bulkOperations.bulkUpdateStatus();
-        } catch (error) {
-            this.handleError(error, 'BulkOperations.bulkUpdateStatus');
-            this.dispatchBulkEvent('bulkOperationCompleted', { 
-                success: false, 
-                error: error.message 
-            });
-        }
-    }
 
     async bulkExport() {
         const bulkOperations = this.getModule('bulkOperations');
@@ -231,31 +208,6 @@ class ProductManagerCore {
             await bulkOperations.bulkDelete();
         } catch (error) {
             this.handleError(error, 'BulkOperations.bulkDelete');
-            this.dispatchBulkEvent('bulkOperationCompleted', { 
-                success: false, 
-                error: error.message 
-            });
-        }
-    }
-
-    async bulkDuplicate() {
-        const bulkOperations = this.getModule('bulkOperations');
-        if (!bulkOperations) {
-            this.showNotification('error', 'Módulo de operaciones masivas no disponible');
-            return;
-        }
-
-        if (!this.validateBulkOperation('duplicate')) return;
-
-        try {
-            this.dispatchBulkEvent('bulkOperationStarted', { 
-                type: 'duplicate', 
-                count: this.getSelectedIds().length 
-            });
-            
-            await bulkOperations.bulkDuplicate();
-        } catch (error) {
-            this.handleError(error, 'BulkOperations.bulkDuplicate');
             this.dispatchBulkEvent('bulkOperationCompleted', { 
                 success: false, 
                 error: error.message 
@@ -352,6 +304,18 @@ class ProductManagerCore {
     }
 
     // === GESTIÓN DE ESTADO MEJORADA ===
+    setState(newState) {
+        const oldState = { ...this.state };
+        this.state = { ...this.state, ...newState };
+        // Disparar un evento global de cambio de estado
+        document.dispatchEvent(new CustomEvent('productManagerStateChange', {
+            detail: { oldState, newState: this.state }
+        }));
+        console.debug('Core state updated:', this.state);
+    }
+
+
+    
     updateState(key, value) {
         const oldValue = this.state[key];
         this.state[key] = value;
@@ -470,86 +434,116 @@ class ProductManagerCore {
     }
 
     // === GESTIÓN DE CARGA MEJORADA ===
-    showSpinner(message = 'Cargando...', persistent = false) {
-        if (document.getElementById('productManagerSpinner')) {
-            // Actualizar mensaje si ya existe
-            const existingMessage = document.querySelector('#productManagerSpinner small');
-            if (existingMessage) {
-                existingMessage.textContent = message;
-            }
-            return;
+    showSpinner() {
+        let spinner = document.getElementById('product-loading-spinner');
+        if (!spinner) {
+            spinner = document.createElement('div');
+            spinner.id = 'product-loading-spinner';
+            spinner.className = 'spinner-overlay'; // Clase CSS para overlay y centrado
+            spinner.innerHTML = `
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            `;
+            document.body.appendChild(spinner);
         }
-        
-        this.updateState('isLoading', true);
-        
-        const spinner = document.createElement('div');
-        spinner.id = 'productManagerSpinner';
-        spinner.className = 'position-fixed top-50 start-50 translate-middle d-flex flex-column align-items-center';
-        spinner.style.cssText = 'z-index: 9999; background: rgba(255,255,255,0.95); padding: 2rem; border-radius: 0.75rem; box-shadow: 0 8px 25px rgba(0,0,0,0.15); backdrop-filter: blur(10px);';
-        
-        const closeBtn = persistent ? '' : `
-            <button type="button" class="btn-close position-absolute top-0 end-0 m-2" 
-                    onclick="document.getElementById('productManagerSpinner').remove(); 
-                             productManager.updateState('isLoading', false);"
-                    title="Cancelar operación"></button>
-        `;
-        
-        spinner.innerHTML = `
-            ${closeBtn}
-            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <div class="text-center">
-                <div class="fw-semibold mb-1">Procesando</div>
-                <small class="text-muted">${message}</small>
-            </div>
-        `;
-        
-        document.body.appendChild(spinner);
+        spinner.style.display = 'flex'; // Usar flex para centrado
     }
 
     hideSpinner() {
-        const spinner = document.getElementById('productManagerSpinner');
+        const spinner = document.getElementById('product-loading-spinner');
         if (spinner) {
-            spinner.style.opacity = '0';
-            spinner.style.transform = 'translate(-50%, -50%) scale(0.9)';
-            spinner.style.transition = 'all 0.2s ease-out';
-            
-            setTimeout(() => {
-                spinner.remove();
-                this.updateState('isLoading', false);
-            }, 200);
+            spinner.style.display = 'none';
         }
     }
 
     // === GESTIÓN DE URL ===
-    updateURL(params, reload = true) {
-        const url = new URL(window.location.href);
-        
-        Object.entries(params).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                url.searchParams.set(key, value);
-            } else {
-                url.searchParams.delete(key);
+    
+    /**
+     * Obtiene los parámetros de la URL actual.
+     * @returns {URLSearchParams}
+     */
+    getCurrentURLParams() {
+        return new URLSearchParams(window.location.search);
+    }
+    
+    
+    /**
+     * Actualiza la URL y recarga los datos de los productos vía AJAX.
+     * Esto es el corazón del filtrado dinámico.
+     * @param {Object} newFilters Un objeto con los nuevos filtros a aplicar.
+     * Ej: { search: 'texto', categoria: '1' }
+     * @param {boolean} pushState Indica si se debe agregar una nueva entrada al historial del navegador (true)
+     * o reemplazar la actual (false). Por defecto true.
+     */
+    async updateURL(newFilters, pushState = true) {
+        if (this.state.isLoading) {
+            console.warn('Ya hay una petición en curso. Ignorando updateURL.');
+            return;
+        }
+
+        this.setState({ isLoading: true });
+        this.showSpinner(); // Mostrar un spinner mientras se carga
+
+        const currentParams = this.getCurrentURLParams();
+
+        // Aplicar los nuevos filtros a los parámetros existentes
+        // Los filtros vacíos (null, undefined, '') deben eliminarse de la URL
+        for (const key in newFilters) {
+            if (newFilters.hasOwnProperty(key)) {
+                if (newFilters[key] !== null && newFilters[key] !== undefined && newFilters[key] !== '') {
+                    currentParams.set(key, newFilters[key]);
+                } else {
+                    currentParams.delete(key);
+                }
             }
-        });
-        
-        // Resetear paginación al filtrar
-        if (Object.keys(params).some(key => ['search', 'categoria', 'marca', 'status', 'stock_filter'].includes(key))) {
-            url.searchParams.delete('page');
+        }
+
+        // Actualizar el estado de los filtros en el core
+        this.setState({ filters: Object.fromEntries(currentParams.entries()) });
+
+        const newPath = window.location.pathname + (currentParams.toString() ? `?${currentParams.toString()}` : '');
+
+        // 1. Actualizar la URL en la barra de direcciones sin recargar la página
+        if (pushState) {
+            window.history.pushState(this.state.filters, '', newPath);
+        } else {
+            window.history.replaceState(this.state.filters, '', newPath);
         }
         
-        if (reload) {
-            window.location.href = url.toString();
-        } else {
-            window.history.pushState({}, '', url.toString());
-            
-            // Notificar cambio de URL a los módulos
-            this.modules.forEach((module) => {
-                if (typeof module.onURLChange === 'function') {
-                    module.onURLChange(this.getURLParams());
+        console.debug('URL actualizada a:', newPath);
+
+        // 2. Realizar la petición AJAX para obtener los nuevos productos
+        try {
+            const response = await fetch(newPath, { // Usamos newPath para la petición AJAX
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest', // Indica que es una petición AJAX
+                    'Accept': 'application/json', // Esperamos una respuesta JSON
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') // Tu token CSRF
                 }
             });
+
+            if (!response.ok) {
+                // Si la respuesta no es 2xx, lanza un error
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+
+            const data = await response.json(); // Esperamos un JSON con los parciales HTML
+
+            // 3. Renderizar los datos recibidos en las secciones correspondientes del DOM
+            this.renderProductData(data);
+
+            this.showToast('Productos actualizados.', 'success');
+
+        } catch (error) {
+            console.error('Error al cargar productos vía AJAX:', error);
+            this.showToast('Error al cargar productos.', 'danger');
+            // Opcional: recargar la página si falla el AJAX para evitar estado inconsistente
+            // window.location.reload();
+        } finally {
+            this.setState({ isLoading: false });
+            this.hideSpinner(); // Ocultar el spinner
         }
     }
 
@@ -562,6 +556,73 @@ class ProductManagerCore {
         }
         
         return result;
+    }
+
+    /**
+     * Renderiza el HTML recibido en las secciones correspondientes de la página.
+     * @param {Object} data Objeto JSON con el HTML de los parciales.
+     * Ej: { product_table: '...', product_stats: '...', pagination: '...' }
+     */
+    renderProductData(data) {
+        const { selectors } = this.config;
+
+        if (data.product_table && document.querySelector(selectors.productTableContainer)) {
+            document.querySelector(selectors.productTableContainer).innerHTML = data.product_table;
+            console.debug('Product table updated.');
+            // Re-bindear eventos de la tabla si es necesario (ej: selección de filas, botones de acción)
+            if (this.modules.has('tableFeatures')) {
+                this.modules.get('tableFeatures').initializeTableFeatures(); // Re-inicializar características
+                this.modules.get('tableFeatures').updateBulkActions(); // Actualizar barra de acciones masivas
+            }
+        } else {
+            console.warn('Product table container or data not found.');
+        }
+
+        if (data.product_stats && document.querySelector(selectors.productStatsContainer)) {
+            document.querySelector(selectors.productStatsContainer).innerHTML = data.product_stats;
+            console.debug('Product stats updated.');
+        } else {
+            console.warn('Product stats container or data not found.');
+        }
+
+        // Si tienes paginación, también podrías actualizarla
+        if (data.pagination && document.querySelector(selectors.paginationContainer)) {
+            document.querySelector(selectors.paginationContainer).innerHTML = data.pagination;
+            console.debug('Pagination updated.');
+            // Re-bindear eventos de paginación si están en un módulo separado
+            if (this.modules.has('eventHandlers')) {
+                this.modules.get('eventHandlers').bindNavigationEvents(); // Re-bindear eventos de paginación
+            }
+        } else {
+            console.warn('Pagination container or data not found.');
+        }
+
+        // Asegurarse de que el panel de filtros se mantenga sincronizado si la URL cambia
+        this.syncFilterFormWithURL();
+    }
+
+    /**
+     * Sincroniza los valores del formulario de filtros con los parámetros actuales de la URL.
+     * Útil después de una carga AJAX o si el usuario navega con las flechas del navegador.
+     */
+    syncFilterFormWithURL() {
+        const filtersForm = document.getElementById('filtersForm');
+        if (!filtersForm) return;
+
+        const urlParams = this.getCurrentURLParams();
+
+        filtersForm.querySelectorAll('input[name], select[name]').forEach(element => {
+            const paramName = element.name;
+            const paramValue = urlParams.get(paramName);
+
+            if (element.tagName === 'INPUT' && element.type === 'text') {
+                element.value = paramValue || '';
+            } else if (element.tagName === 'SELECT') {
+                element.value = paramValue || ''; // Selecciona la opción que coincida
+                // Si la opción no existe, la selección será la primera o vacía
+            }
+        });
+        console.debug('Filter form synced with URL parameters.');
     }
 
     // === CLIENTE API MEJORADO ===
@@ -705,6 +766,8 @@ class ProductManagerCore {
 
         return toast;
     }
+
+
 
     // === MANEJO DE ERRORES MEJORADO ===
     handleError(error, context = 'Unknown') {
@@ -949,3 +1012,6 @@ class ProductManagerCore {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProductManagerCore;
 }
+
+// Global instance for browser
+window.productManager = new ProductManagerCore();

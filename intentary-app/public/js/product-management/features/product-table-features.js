@@ -203,3 +203,5 @@ class ProductTableFeatures {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProductTableFeatures;
 }
+
+window.ProductTableFeatures = ProductTableFeatures;

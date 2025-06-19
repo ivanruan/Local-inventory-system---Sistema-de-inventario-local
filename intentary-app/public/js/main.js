@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Opcional: Sobreescribir la instancia global si quieres que apunte a la del core
     // Esto es útil si otras partes de tu código ya están usando window.formHelpers
     // y quieres que esa instancia tenga acceso al core.
-    window.formHelpers = formHelpers;
 
     // Modo depuración (opcional)
     // core.debugMode(true);

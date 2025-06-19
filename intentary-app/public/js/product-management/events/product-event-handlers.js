@@ -51,13 +51,13 @@ class ProductEventHandlers {
 
     // === EVENTOS DE BÚSQUEDA ===
     bindSearchEvents() {
-        const searchInput = document.querySelector('input[name="search"]');
+        const searchInput = document.querySelector('#filtersForm input[name="search"]'); //
         if (searchInput) {
-            // Búsqueda con debounce
             this.addEventListener(searchInput, 'input', this.core.debounce((e) => {
                 this.handleSearchInput(e);
-            }, this.core.getConfig('debounceDelay')));
-
+            }, this.core.config.debounceDelay)); // Usar el debounce del core
+            console.debug('Search input events bound.');
+        
             // Limpiar búsqueda con Escape
             this.addEventListener(searchInput, 'keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -76,11 +76,14 @@ class ProductEventHandlers {
         }
     }
 
+    handleSearchInput(event) {
+        const searchValue = event.target.value;
+        this.core.updateURL({ search: searchValue }); // Llamar a updateURL del core
+    }
+
     // === EVENTOS DE FILTROS ===
     bindFilterEvents() {
-        const filterSelects = document.querySelectorAll(
-            'select[name="categoria"], select[name="marca"], select[name="status"], select[name="stock_filter"]'
-        );
+        const filterSelects = document.querySelectorAll('#filtersForm select[name]'); 
 
         filterSelects.forEach(select => {
             this.addEventListener(select, 'change', (e) => {
@@ -100,41 +103,60 @@ class ProductEventHandlers {
                 this.clearAllFilters();
             });
         }
+
+        console.debug('Filter select events bound.');
+    }
+
+    handleFilterChange(event) {
+        const filterName = event.target.name;
+        const filterValue = event.target.value;
+        this.core.updateURL({ [filterName]: filterValue }); // Llamar a updateURL del core
     }
 
     // === EVENTOS DE FORMULARIOS ===
     bindFormEvents() {
-        // Validación en tiempo real
-        const formInputs = document.querySelectorAll('input[data-validate], select[data-validate], textarea[data-validate]');
-        formInputs.forEach(input => {
-            this.addEventListener(input, 'blur', () => {
-                this.validateField(input);
-            });
+        const filtersForm = document.getElementById('filtersForm'); //
+        if (filtersForm) {
+            // Prevenir el envío tradicional del formulario para manejarlo con AJAX
+            this.addEventListener(filtersForm, 'submit', (e) => {
+                e.preventDefault(); // Detener el envío por defecto del navegador
+                console.log('Formulario de filtros enviado vía JS (prevenido recarga)');
 
-            this.addEventListener(input, 'input', this.core.debounce(() => {
-                if (input.classList.contains('is-invalid')) {
-                    this.validateField(input);
+                // Recopilar todos los valores del formulario
+                const formData = new FormData(filtersForm);
+                const params = {};
+                for (let [key, value] of formData.entries()) {
+                    if (value) { // Solo añadir si tiene un valor (no nulo, no vacío)
+                        params[key] = value;
+                    }
                 }
-            }, 300));
-        });
-
-        // Auto-guardado en formularios largos
-        const autoSaveForms = document.querySelectorAll('form[data-auto-save]');
-        autoSaveForms.forEach(form => {
-            this.addEventListener(form, 'input', this.core.debounce(() => {
-                this.autoSaveForm(form);
-            }, 2000));
-        });
-
-        // Prevenir envío accidental de formularios
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            this.addEventListener(form, 'submit', (e) => {
-                if (!this.validateForm(form)) {
-                    e.preventDefault();
-                }
+                this.core.updateURL(params); // Llama a updateURL con todos los filtros
             });
-        });
+            console.debug('Filter form submit event bound.');
+        }
+
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn'); //
+        if (clearFiltersBtn) {
+            this.addEventListener(clearFiltersBtn, 'click', (e) => {
+                e.preventDefault(); // Prevenir recarga de la página por el href
+                this.clearAllFilters();
+            });
+            console.debug('Clear filters button event bound.');
+        }
+    }
+
+    clearAllFilters() {
+        const filtersForm = document.getElementById('filtersForm'); //
+        if (filtersForm) {
+            // Restablecer inputs de texto
+            filtersForm.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+            // Restablecer selects a la opción vacía
+            filtersForm.querySelectorAll('select').forEach(select => select.value = '');
+
+            // Disparar la actualización para mostrar todos los productos
+            this.core.updateURL({}); // Enviar un objeto vacío para limpiar todos los filtros de la URL
+            this.core.showToast('Filtros limpiados.', 'info');
+        }
     }
 
     // === EVENTOS DE NAVEGACIÓN ===
@@ -590,3 +612,5 @@ class ProductEventHandlers {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProductEventHandlers;
 }
+
+window.ProductEventHandlers = ProductEventHandlers;

@@ -73,29 +73,62 @@ class ProductoController extends Controller
 
         $productos = $query->paginate(10); // O el número de elementos por página que uses
 
-        // --- CÁLCULO DE ESTADÍSTICAS (Esto es lo que te faltaba o tenías incompleto) ---
-        // Calcula estas variables ANTES de pasarlas a la vista
-        $totalProductos = Producto::count();
-        $stockBajo = Producto::whereColumn('stock_actual', '<=', 'stock_minimo')
-                              ->where('stock_actual', '>', 0) // Que no esté fuera de stock
-                              ->count();
-        $fueraStock = Producto::where('stock_actual', 0)->count();
-        $valorTotal = Producto::sum(\DB::raw('stock_actual * valor_unitario')); // Asegúrate de tener stock_actual y costo
-        $sobreStock = Producto::whereColumn('stock_actual', '>=', 'stock_maximo')->count();
+        // Calcular estadísticas fuera de la paginación para tener el total real
+        $allProductsQuery = Producto::query();
+        // Aplicar los mismos filtros a la consulta de estadísticas, PERO SIN paginar
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $allProductsQuery->where(function($q) use ($search) {
+                $q->where('codigo', 'like', '%' . $search . '%')
+                  ->orWhere('nombre', 'like', '%' . $search . '%')
+                  ->orWhere('especificacion', 'like', '%' . $search . '%');
+            });
+        }
+        if ($request->filled('categoria')) {
+            $allProductsQuery->where('categoria_id', $request->input('categoria'));
+        }
+        if ($request->filled('marca')) {
+            $allProductsQuery->where('marca_id', $request->input('marca'));
+        }
+        if ($request->filled('status')) {
+            $allProductsQuery->where('status', $request->input('status'));
+        }
+        if ($request->filled('stock_filter')) {
+            $stockFilter = $request->input('stock_filter');
+            if ($stockFilter === 'bajo') {
+                $allProductsQuery->whereColumn('stock_actual', '<=', 'stock_minimo')->where('stock_actual', '>', 0);
+            } elseif ($stockFilter === 'fuera') {
+                $allProductsQuery->where('stock_actual', 0);
+            } elseif ($stockFilter === 'sobre') {
+                $allProductsQuery->whereColumn('stock_actual', '>', 'stock_maximo');
+            }
+        }
 
-        // Cargar datos para filtros (si no lo estás haciendo ya)
-        $categorias = Categoria::all();
-        $marcas = Marca::all();
+        $stockBajo = (clone $allProductsQuery)->whereColumn('stock_actual', '<=', 'stock_minimo')->where('stock_actual', '>', 0)->count();
+        $fueraStock = (clone $allProductsQuery)->where('stock_actual', 0)->count();
+        $sobreStock = (clone $allProductsQuery)->whereColumn('stock_actual', '>', 'stock_maximo')->count();
+        $valorTotal = (clone $allProductsQuery)->sum(DB::raw('valor_unitario * stock_actual'));
 
+
+        // Verificar si la petición es AJAX
+        if ($request->ajax()) {
+            return response()->json([
+                'product_table' => view('productos.partials._product_table', compact('productos'))->render(),
+                'product_stats' => view('productos.partials._product_stats', compact('productos', 'stockBajo', 'fueraStock', 'valorTotal', 'sobreStock'))->render(),
+                'pagination' => $productos->links()->toHtml(), // Renderiza la paginación como HTML
+                'message' => 'Productos actualizados.'
+            ]);
+        }
+
+        // Si no es AJAX, devuelve la vista completa
         return view('productos.index', [
             'productos' => $productos,
-            'categorias' => $categorias,
-            'marcas' => $marcas,
-            'totalProductos' => $totalProductos, // Pasando la variable
-            'stockBajo' => $stockBajo, // Pasando la variable
-            'fueraStock' => $fueraStock, // Pasando la variable
-            'valorTotal' => $valorTotal, // Pasando la variable
-            'sobreStock' => $sobreStock, // Pasando la variable
+            'categorias' => Categoria::all(),
+            'marcas' => Marca::all(),
+            'stockBajo' => $stockBajo,
+            'fueraStock' => $fueraStock,
+            'valorTotal' => $valorTotal,
+            'sobreStock' => $sobreStock,
         ]);
     }
 

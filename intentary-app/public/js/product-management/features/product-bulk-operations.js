@@ -595,3 +595,5 @@ class ProductBulkOperations {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProductBulkOperations;
 }
+
+window.ProductBulkOperations = ProductBulkOperations;

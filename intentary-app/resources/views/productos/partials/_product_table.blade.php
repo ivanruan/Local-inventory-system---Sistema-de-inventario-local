@@ -159,15 +159,4 @@
             </tbody>
         </table>
     </div>
-
-    {{-- Información de paginación --}}
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <div class="text-muted">
-            Mostrando {{ $productos->firstItem() }} a {{ $productos->lastItem() }} 
-            de {{ $productos->total() }} resultados
-        </div>
-        <div>
-            {{ $productos->appends(request()->query())->links() }}
-        </div>
-    </div>
 @endif
